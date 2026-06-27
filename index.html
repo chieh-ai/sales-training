@@ -72,16 +72,15 @@
   <header id="app-header" class="sticky top-0 z-40 bg-appleBg/80 blur-backdrop border-b border-appleBorder/60 px-6 py-4 flex justify-between items-center hidden">
     <div class="flex items-center cursor-pointer" onclick="switchTab('home')" title="回到首頁"><h1 class="text-xl font-bold tracking-tight text-appleDarkText hover:text-appleBlue transition-colors"> Sales Training</h1></div>
     <div class="flex items-center space-x-1.5 ml-auto mr-3">
-      <button type="button" onclick="showChangePassword()" title="修改密碼" class="w-8 h-8 rounded-full flex items-center justify-center text-appleGrayText hover:text-appleBlue hover:bg-appleBlue/10 transition-all active:scale-90"><i data-lucide="key-round" class="w-4 h-4"></i></button>
       <button type="button" onclick="doLogout()" title="登出" class="w-8 h-8 rounded-full flex items-center justify-center text-appleGrayText hover:text-appleDanger hover:bg-appleDanger/10 transition-all active:scale-90"><i data-lucide="log-out" class="w-4 h-4"></i></button>
     </div>
-    <div class="flex items-center space-x-3 bg-appleCard/80 px-3 py-1.5 rounded-2xl border border-appleBorder shadow-sm">
+    <button type="button" onclick="showProfilePanel()" title="個人資料" class="flex items-center space-x-3 bg-appleCard/80 px-3 py-1.5 rounded-2xl border border-appleBorder shadow-sm hover:border-appleBlue/40 hover:bg-appleBlue/5 transition-all active:scale-95 cursor-pointer">
       <div class="w-8 h-8 rounded-full bg-appleBlue/10 flex items-center justify-center shrink-0"><i data-lucide="user" class="w-4 h-4 text-appleBlue"></i></div>
       <div class="text-right">
         <p class="text-xs font-bold text-appleDarkText" id="header-user-name">載入中...</p>
         <p class="text-[10px] text-appleBlue font-bold mt-0.5" id="header-user-store"></p>
       </div>
-    </div>
+    </button>
   </header>
 
   <main id="app-main" class="flex-grow max-w-5xl w-full mx-auto px-4 py-6 md:px-8 hidden relative">
@@ -631,6 +630,103 @@
     }
 
     function closeCpOverlay() { var e = document.getElementById('cp-overlay'); if(e) e.remove(); }
+
+    function showProfilePanel() {
+      var existing = document.getElementById('profile-overlay');
+      if (existing) { existing.remove(); return; }
+      var u = window.appData && window.appData.user;
+      if (!u) return;
+
+      // 等級色
+      var lvlMap = { TT:'bg-purple-100 text-purple-700', AM:'bg-blue-100 text-appleBlue', SS:'bg-yellow-100 text-yellow-700', S:'bg-green-100 text-appleGreen', A:'bg-orange-100 text-orange-600', B:'bg-gray-100 text-appleGrayText' };
+      var lvlColor = lvlMap[u.level] || 'bg-gray-100 text-appleGrayText';
+
+      // 年資
+      var tenureStr = '—';
+      if (u.hireDate) {
+        var hire = new Date(u.hireDate); var now = new Date();
+        if (!isNaN(hire.getTime()) && hire < now) {
+          var diff = Math.floor((now - hire) / 86400000);
+          tenureStr = Math.floor(diff/365) + ' 年 ' + Math.floor((diff%365)/30) + ' 月 ' + (diff%365%30) + ' 日';
+        }
+      }
+
+      // 原廠角色
+      var roleMap = {};
+      (window.appData.factoryOptions||[]).filter(function(o){return o.type==='Role';}).forEach(function(o){roleMap[o.code]=o.label;});
+      var roleLabels = (u.factoryRoles||'').split(',').map(function(c){return c.trim();}).filter(Boolean).map(function(c){return roleMap[c]||c;});
+
+      // 原廠檢定
+      var certOptMap = {};
+      (window.appData.factoryOptions||[]).filter(function(o){return o.type==='Cert';}).forEach(function(o){certOptMap[o.code]=o.label;});
+      var certItems = [];
+      try { certItems = JSON.parse(u.certifications||'[]'); } catch(e) {}
+
+      function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+      var html = [
+        '<div id="profile-overlay" class="fixed inset-0 z-50 flex items-start justify-end p-4 pt-16" style="pointer-events:none">',
+        '<div class="bg-white border border-appleBorder rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4" style="pointer-events:auto">',
+
+        // 標題列
+        '<div class="flex items-center justify-between">',
+        '  <h3 class="text-sm font-bold text-appleDarkText flex items-center gap-2"><i data-lucide="user-circle" class="w-4 h-4 text-appleBlue"></i>個人資料</h3>',
+        '  <button type="button" onclick="document.getElementById(\'profile-overlay\').remove()" class="w-7 h-7 rounded-full flex items-center justify-center text-appleGrayText hover:bg-appleBorder/60 transition-all"><i data-lucide="x" class="w-4 h-4"></i></button>',
+        '</div>',
+
+        // 第一行：頭像 + 姓名 + Email 膠囊 + 等級
+        '<div class="flex items-center gap-3">',
+        '  <div class="w-11 h-11 rounded-2xl bg-appleBlue/10 flex items-center justify-center shrink-0"><i data-lucide="user" class="w-5 h-5 text-appleBlue"></i></div>',
+        '  <div class="min-w-0 flex-1">',
+        '    <div class="flex items-center gap-2 flex-wrap">',
+        '      <span class="text-base font-black text-appleDarkText">' + esc(u.name||'—') + '</span>',
+        '      <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-appleCard border border-appleBorder text-appleGrayText"><i data-lucide="mail" class="w-3 h-3"></i>' + esc(u.email||'—') + '</span>',
+        '      <span class="text-[11px] font-black px-2 py-0.5 rounded-full ' + lvlColor + '">' + esc(u.level||'L0') + '</span>',
+        '    </div>',
+        '  </div>',
+        '</div>',
+
+        // 第二行：通路、門市、職稱、年資
+        '<div class="flex flex-wrap gap-1.5">'
+      ];
+
+      [['building-2', u.channelName||'—'], ['store', u.storeName||'—'], ['badge-check', u.storeRole||'—'], ['calendar', tenureStr]].forEach(function(t){
+        html.push('<div class="flex items-center gap-1.5 bg-appleCard border border-appleBorder rounded-xl px-2.5 py-1"><i data-lucide="'+t[0]+'" class="w-3 h-3 text-appleGrayText shrink-0"></i><span class="text-xs font-bold text-appleDarkText">'+esc(t[1])+'</span></div>');
+      });
+      html.push('</div>');
+
+      // 第三行：原廠角色 + 原廠檢定（同一列）
+      if (roleLabels.length > 0 || certItems.length > 0) {
+        html.push('<div class="flex flex-wrap gap-1.5">');
+        roleLabels.forEach(function(l){
+          html.push('<span class="inline-flex items-center text-[11px] font-bold px-2.5 py-1 rounded-xl bg-appleBlue/10 text-appleBlue border border-appleBlue/20">'+esc(l)+'</span>');
+        });
+        certItems.forEach(function(c){
+          var label = certOptMap[c.code] || c.code;
+          var isValid = c.validity !== '失效';
+          var badge = isValid
+            ? '<span class="text-[9px] font-black text-appleGreen bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full ml-1">有效</span>'
+            : '<span class="text-[9px] font-black text-appleGrayText bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-full ml-1">失效</span>';
+          html.push('<span class="inline-flex items-center text-[11px] font-bold px-2.5 py-1 rounded-xl bg-appleCard border border-appleBorder text-appleDarkText">'+esc(label)+badge+'</span>');
+        });
+        html.push('</div>');
+      }
+
+      // 分隔線 + 修改密碼按鈕
+      html.push('<div class="border-t border-appleBorder/60 pt-3">');
+      html.push('<button type="button" onclick="document.getElementById(\'profile-overlay\').remove(); showChangePassword();" class="w-full flex items-center justify-center gap-2 bg-appleCard border border-appleBorder hover:border-appleBlue/40 hover:bg-appleBlue/5 text-appleDarkText hover:text-appleBlue rounded-xl py-2.5 text-sm font-bold transition-all active:scale-95"><i data-lucide="key-round" class="w-4 h-4"></i>修改密碼</button>');
+      html.push('</div>');
+
+      html.push('</div></div>');
+
+      var el = document.createElement('div');
+      el.innerHTML = html.join('');
+      var overlay = el.firstChild;
+      document.body.appendChild(overlay);
+      // 點擊遮罩外部關閉
+      overlay.addEventListener('click', function(e){ if(e.target === overlay) overlay.remove(); });
+      try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
 
     function showChangePassword() {
       var existing = document.getElementById('cp-overlay');
