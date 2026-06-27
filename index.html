@@ -2247,27 +2247,65 @@
       arr.push('<div class="border-t border-appleBorder/60 pt-5 mt-2 space-y-5">');
 
       var lvlColor = prLevelColor(user.level);
-      arr.push('<div class="bg-appleBg rounded-2xl border border-appleBorder px-5 py-4 flex items-center gap-5 flex-wrap">');
-      // 左：頭像 + 姓名 + 職稱
-      arr.push('<div class="flex items-center gap-3 shrink-0">');
-      arr.push('<div class="w-12 h-12 rounded-2xl bg-appleBlue/10 flex items-center justify-center"><i data-lucide="user" class="w-6 h-6 text-appleBlue"></i></div>');
-      arr.push('<div><div class="flex items-center gap-2"><span class="text-base font-black text-appleDarkText">' + prEscHtml(user.name||'—') + '</span><span class="text-[11px] font-black px-2 py-0.5 rounded-full ' + lvlColor + '">' + prEscHtml(user.level||'L0') + '</span></div>');
-      arr.push('<p class="text-xs text-appleGrayText mt-0.5">' + prEscHtml(user.storeRole||'—') + '</p></div></div>');
-      // 右：標籤列（通路、門市、年資、Email）
-      arr.push('<div class="flex flex-wrap gap-2 flex-1 min-w-0">');
-      var tags = [
-        { icon: 'building-2', label: user.channelName||'—' },
-        { icon: 'store',      label: user.storeName||'—'   },
-        { icon: 'calendar',   label: tenureStr              },
-        { icon: 'mail',       label: user.email||'—'       }
-      ];
-      tags.forEach(function(t){
-        arr.push('<div class="flex items-center gap-1.5 bg-appleCard border border-appleBorder rounded-xl px-3 py-1.5 min-w-0">');
-        arr.push('<i data-lucide="' + t.icon + '" class="w-3.5 h-3.5 text-appleGrayText shrink-0"></i>');
-        arr.push('<span class="text-xs font-bold text-appleDarkText truncate max-w-[120px]" title="' + prEscAttr(t.label) + '">' + prEscHtml(t.label) + '</span>');
+
+      // ── 原廠角色 mapping
+      var roleMap = {};
+      (window.appData.factoryOptions||[]).filter(function(o){return o.type==='Role';}).forEach(function(o){roleMap[o.code]=o.label;});
+      var roleLabels = (user.factoryRoles||'').split(',').map(function(c){return c.trim();}).filter(Boolean).map(function(c){return roleMap[c]||c;});
+
+      // ── 原廠檢定 mapping
+      var certOptMap = {};
+      (window.appData.factoryOptions||[]).filter(function(o){return o.type==='Cert';}).forEach(function(o){certOptMap[o.code]=o.label;});
+      var certItems = [];
+      try { certItems = JSON.parse(user.certifications||'[]'); } catch(e) {}
+
+      arr.push('<div class="bg-appleBg rounded-2xl border border-appleBorder px-5 py-4 space-y-3">');
+
+      // 第一行：頭像 + 姓名 + 職稱 + Email
+      arr.push('<div class="flex items-center gap-3">');
+      arr.push('<div class="w-12 h-12 rounded-2xl bg-appleBlue/10 flex items-center justify-center shrink-0"><i data-lucide="user" class="w-6 h-6 text-appleBlue"></i></div>');
+      arr.push('<div class="min-w-0 flex-1">');
+      arr.push('<div class="flex items-center gap-2 flex-wrap"><span class="text-base font-black text-appleDarkText">' + prEscHtml(user.name||'—') + '</span><span class="text-[11px] font-black px-2 py-0.5 rounded-full ' + lvlColor + '">' + prEscHtml(user.level||'L0') + '</span></div>');
+      arr.push('<p class="text-xs text-appleGrayText mt-0.5">' + prEscHtml(user.storeRole||'—') + '</p>');
+      arr.push('<p class="text-xs text-appleGrayText/80 mt-0.5 break-all">' + prEscHtml(user.email||'—') + '</p>');
+      arr.push('</div></div>');
+
+      // 第二行：通路、門市、年資 標籤
+      arr.push('<div class="flex flex-wrap gap-2">');
+      [['building-2', user.channelName||'—'], ['store', user.storeName||'—'], ['calendar', tenureStr]].forEach(function(t){
+        arr.push('<div class="flex items-center gap-1.5 bg-appleCard border border-appleBorder rounded-xl px-3 py-1.5">');
+        arr.push('<i data-lucide="' + t[0] + '" class="w-3.5 h-3.5 text-appleGrayText shrink-0"></i>');
+        arr.push('<span class="text-xs font-bold text-appleDarkText">' + prEscHtml(t[1]) + '</span>');
         arr.push('</div>');
       });
-      arr.push('</div></div>');
+      arr.push('</div>');
+
+      // 第三行：原廠角色
+      if (roleLabels.length > 0) {
+        arr.push('<div class="flex items-center gap-2 flex-wrap">');
+        arr.push('<span class="text-[10px] font-bold text-appleGrayText shrink-0 flex items-center gap-1"><i data-lucide="briefcase" class="w-3 h-3"></i>原廠角色</span>');
+        roleLabels.forEach(function(l){
+          arr.push('<span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-appleBlue/10 text-appleBlue border border-appleBlue/20">' + prEscHtml(l) + '</span>');
+        });
+        arr.push('</div>');
+      }
+
+      // 第四行：原廠檢定
+      if (certItems.length > 0) {
+        arr.push('<div class="flex items-center gap-2 flex-wrap">');
+        arr.push('<span class="text-[10px] font-bold text-appleGrayText shrink-0 flex items-center gap-1"><i data-lucide="award" class="w-3 h-3"></i>原廠檢定</span>');
+        certItems.forEach(function(c){
+          var label = certOptMap[c.code] || c.code;
+          var isValid = c.validity !== '失效';
+          var validBadge = isValid
+            ? '<span class="text-[9px] font-black text-appleGreen bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full ml-1">有效</span>'
+            : '<span class="text-[9px] font-black text-appleGrayText bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-full ml-1">失效</span>';
+          arr.push('<span class="inline-flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-appleCard border border-appleBorder text-appleDarkText">' + prEscHtml(label) + validBadge + '</span>');
+        });
+        arr.push('</div>');
+      }
+
+      arr.push('</div>');
 
       arr.push('<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">');
       arr.push(buildPrStatCard('📊 總覽', '觀看過的影片', ovTotal, ovCompleted, ovTotal - ovCompleted, ovSecs, '#0071E3', 'text-appleBlue'));
