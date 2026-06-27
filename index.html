@@ -372,7 +372,7 @@
     // ==========================================
     //  ★ 設定：部署後請將下方網址換成你的 GAS /exec URL ★
     // ==========================================
-    var GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxbEyXCHFj_QJyMAl8_Hp_MrrLpoW6n0_-Jje31mYFdZ9WYheKwNECmtx3WuZgSozcfvQ/exec';
+    var GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxllF5a8TLkZHjdpNCHXg9HPnkfqolraxrXekXqipTPq98PfBydeQuUjNcsQoOvCiKJyQ/exec';
     // 登入憑證（頁面重新整理即清除，不存入任何 Storage）
     window.appCredentials = { email: '', password: '' };
 
@@ -560,6 +560,10 @@
       safeAddListener('admin-playlist-items-per-page', 'change', function(e) { window.adminPlaylistItemsPerPage = e.target.value; window.adminPlaylistCurrentPage = 1; renderAdminPlaylistList(); });
 
       renderCategories(); renderVideos();
+      // 權限控制：只有 ADMIN + TT 才顯示設定（後台）按鈕
+      var _isAdmin = u && u.storeRole === 'ADMIN' && u.level === 'TT';
+      var _tabAdminBtn = document.getElementById('tab-admin');
+      if (_tabAdminBtn) _tabAdminBtn.style.display = _isAdmin ? '' : 'none';
       try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
     }
 
@@ -872,6 +876,11 @@
     //  導覽切換與進度頁面
     // ==========================================
     function switchTab(tabId) {
+      // 權限防護：直接呼叫 switchTab('admin') 也需驗證
+      if (tabId === 'admin') {
+        var _u = window.appData && window.appData.user;
+        if (!_u || _u.storeRole !== 'ADMIN' || _u.level !== 'TT') return;
+      }
       var tabs = ['home', 'progress', 'admin'];
       for(var i=0; i<tabs.length; i++) {
         var btn = document.getElementById('tab-' + tabs[i]); var sec = document.getElementById('section-' + tabs[i]);
@@ -2039,6 +2048,7 @@
       var filtered = users.filter(function(u){
         return (!ch || u.channelName === ch) && (!st || u.storeName === st) && (!q || (u.name||'').toLowerCase().indexOf(q) !== -1);
       });
+      if (!ch && !st && !q) return '<div class="py-8 text-center"><i data-lucide="users" class="w-10 h-10 text-appleGrayText mx-auto opacity-25 mb-3"></i><p class="text-sm text-appleGrayText">請選擇通路、門市，或輸入姓名搜尋</p></div>';
       if (filtered.length === 0) return '<p class="text-sm text-appleGrayText text-center py-6">沒有符合條件的使用者</p>';
       return filtered.map(function(u) {
         var isSel = (u.email||'').toLowerCase() === (window.prState.selectedEmail||'').toLowerCase();
@@ -2093,6 +2103,11 @@
       (window.appData.videos||[]).forEach(function(v){ videoMap[v.id] = v; });
       var userFavIds = {};
       (window.appData.adminFavorites||[]).forEach(function(f){ if((f.email||'') === emailL) userFavIds[f.videoId] = true; });
+      // Fallback: 查看自己的紀錄且 GAS 尚未更新 adminFavorites 時，改用登入者自身的 favorites
+      var _loggedEmail = (window.appData.user && window.appData.user.email) ? window.appData.user.email.toLowerCase() : '';
+      if (emailL === _loggedEmail && Object.keys(userFavIds).length === 0) {
+        (window.appData.favorites||[]).forEach(function(vid){ userFavIds[vid] = true; });
+      }
       var reqIds = prGetRequiredIds(user.level);
 
       var ovTotal     = userLogs.length;
@@ -2138,7 +2153,7 @@
 
       arr.push('<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">');
       arr.push(buildPrStatCard('📊 總覽', '觀看過的影片', ovTotal, ovCompleted, ovTotal - ovCompleted, ovSecs, '#0071E3', 'text-appleBlue'));
-      arr.push(buildPrStatCard('📚 必修', '共 ' + reqTotalCnt + ' 部必修影片', reqLogs.length, reqCompleted, reqLogs.length - reqCompleted, reqSecs, '#34C759', 'text-appleGreen'));
+      arr.push(buildPrStatCard('📚 必修', '共 ' + reqTotalCnt + ' 部必修影片', reqTotalCnt, reqCompleted, reqTotalCnt - reqCompleted, reqSecs, '#34C759', 'text-appleGreen'));
       arr.push(buildPrStatCard('❤️ 收藏', '共 ' + favIdArr.length + ' 部收藏影片', favIdArr.length, favCompleted, favIdArr.length - favCompleted, favSecs, '#FF3B30', 'text-appleDanger'));
       arr.push('</div>');
 
