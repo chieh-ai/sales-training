@@ -489,9 +489,9 @@ function saveAdminUser(email, data) {
       "Email": data.email, "Password": data.password, "Name": data.name,
       "HireDate": data.hireDate, "ChannelCategory": data.channelCategory,
       "ChannelName": data.channelName, "StoreName": data.storeName,
-      "StoreRole": data.storeRole, "Level": data.level
-          "FactoryRoles":     String(data.factoryRoles   || ''),
-      "Certifications":   String(data.certifications || '')
+      "StoreRole": data.storeRole, "Level": data.level,
+      "FactoryRoles": String(data.factoryRoles || ''),
+      "Certifications": String(data.certifications || '')
     });
     return { status: 'success' };
   } catch(e) { return { status: 'error', message: e.message }; }
