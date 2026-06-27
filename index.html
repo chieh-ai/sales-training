@@ -377,6 +377,16 @@
           <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">角色 (StoreRole)</label><select id="admin-user-storerole" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm appearance-none cursor-pointer"></select></div>
           <div><label class="block text-sm font-bold text-appleDarkText mb-2.5">等級註記 (Level)</label><div class="flex flex-wrap items-center gap-x-4 gap-y-2 bg-appleCard border border-appleBorder rounded-xl px-4 py-2.5 shadow-sm"><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminUserLevel" value="L0" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">L0</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminUserLevel" value="L1" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">L1</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminUserLevel" value="L2" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">L2</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminUserLevel" value="L3" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">L3</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminUserLevel" value="TT" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">TT</span></label></div></div>
         </div>
+        <!-- 原廠角色 -->
+        <div class="p-4 bg-appleCard border border-appleBorder rounded-xl shadow-sm space-y-3">
+          <div class="flex items-center space-x-2"><i data-lucide="briefcase" class="w-4 h-4 text-appleBlue"></i><h4 class="text-sm font-bold text-appleDarkText">原廠角色 (FactoryRoles)</h4></div>
+          <div id="admin-factory-roles" class="grid grid-cols-2 md:grid-cols-3 gap-y-2 gap-x-3 min-h-[2rem]"><p class="text-xs text-appleGrayText col-span-full">載入中…</p></div>
+        </div>
+        <!-- 原廠檢定 -->
+        <div class="p-4 bg-appleCard border border-appleBorder rounded-xl shadow-sm space-y-3">
+          <div class="flex items-center space-x-2"><i data-lucide="award" class="w-4 h-4 text-appleBlue"></i><h4 class="text-sm font-bold text-appleDarkText">原廠檢定 (Certifications)</h4></div>
+          <div id="admin-factory-certs" class="space-y-2 min-h-[2rem]"><p class="text-xs text-appleGrayText">載入中…</p></div>
+        </div>
       </div>
       <div class="bg-appleCard border-t border-appleBorder px-6 py-4 flex justify-end space-x-3 shrink-0 pb-safe">
         <button type="button" onclick="closeAdminUserModal()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-appleDarkText bg-appleBg hover:bg-appleBorder/50 transition-colors">取消</button>
@@ -410,7 +420,7 @@
     // ==========================================
     //  系統全域變數快取 (Global State)
     // ==========================================
-    window.appData = { user: null, categories: [], subCategories: [], videos: [], favorites: [], roles: [], channelCategories: [], channelNames: [], storeNames: [], adminUsers: [], playlists: [], watchLogs: [], adminWatchLogs: [], watchEvents: [], adminFavorites: [] };
+    window.appData = { user: null, categories: [], subCategories: [], videos: [], favorites: [], roles: [], channelCategories: [], channelNames: [], storeNames: [], adminUsers: [], playlists: [], watchLogs: [], adminWatchLogs: [], watchEvents: [], adminFavorites: [], factoryOptions: [] };
     
     window.currentCategory = 'ALL'; window.currentSubCategory = 'ALL'; window.searchQuery = ''; window.isFavoriteView = false; 
     
@@ -537,6 +547,7 @@
           window.appData.adminWatchLogs   = window.appData.adminWatchLogs   || [];
           window.appData.watchEvents      = window.appData.watchEvents      || [];
           window.appData.adminFavorites   = window.appData.adminFavorites   || [];
+          window.appData.factoryOptions   = window.appData.factoryOptions   || [];
 
           document.getElementById('app-loader').style.display = 'none';
           document.getElementById('app-header').classList.remove('hidden');
@@ -603,7 +614,7 @@
     function doLogout() {
       sessionStorage.removeItem('st_e'); sessionStorage.removeItem('st_p');
       window.appCredentials = { email: '', password: '' };
-      window.appData = { user: null, categories: [], subCategories: [], videos: [], favorites: [], roles: [], channelCategories: [], channelNames: [], storeNames: [], adminUsers: [], playlists: [], watchLogs: [], adminWatchLogs: [], watchEvents: [], adminFavorites: [] };
+      window.appData = { user: null, categories: [], subCategories: [], videos: [], favorites: [], roles: [], channelCategories: [], channelNames: [], storeNames: [], adminUsers: [], playlists: [], watchLogs: [], adminWatchLogs: [], watchEvents: [], adminFavorites: [], factoryOptions: [] };
       if (typeof window.prState !== 'undefined') window.prState = { channel: '', store: '', nameQ: '', selectedEmail: '' };
       document.getElementById('app-header').classList.add('hidden');
       document.getElementById('app-main').classList.add('hidden');
@@ -3041,17 +3052,21 @@
             document.getElementById('admin-user-channelcategory').value = user.channelCategory; 
             onAdminUserCategoryChange(user.channelName); onAdminUserChannelChange(user.storeName);
             document.getElementById('admin-user-storerole').value = user.storeRole;
-            var lvlRadios = document.getElementsByName('adminUserLevel'); 
+            var lvlRadios = document.getElementsByName('adminUserLevel');
             for(var i=0; i<lvlRadios.length; i++) lvlRadios[i].checked = (lvlRadios[i].value === (user.level || 'L0'));
+            renderFactoryRolesInModal(user.factoryRoles || '');
+            renderFactoryCertsInModal(user.certifications || '');
           }
         } else {
-          document.getElementById('admin-user-modal-title').innerText = "新增帳號"; 
+          document.getElementById('admin-user-modal-title').innerText = "新增帳號";
           document.getElementById('admin-user-email').value = ''; document.getElementById('admin-user-email').disabled = false;
-          document.getElementById('admin-user-password').value = 'abcd1234'; document.getElementById('admin-user-name').value = ''; 
+          document.getElementById('admin-user-password').value = 'abcd1234'; document.getElementById('admin-user-name').value = '';
           document.getElementById('admin-user-hiredate').value = '';
-          document.getElementById('admin-user-channelcategory').value = ''; onAdminUserCategoryChange(); 
-          document.getElementById('admin-user-storerole').value = ''; 
+          document.getElementById('admin-user-channelcategory').value = ''; onAdminUserCategoryChange();
+          document.getElementById('admin-user-storerole').value = '';
           document.getElementsByName('adminUserLevel')[0].checked = true;
+          renderFactoryRolesInModal('');
+          renderFactoryCertsInModal('');
         }
         document.getElementById('admin-user-password').type = 'password'; 
         document.getElementById('pwd-eye-icon').setAttribute('data-lucide', 'eye');
@@ -3063,13 +3078,65 @@
 
     function closeAdminUserModal() { var modal = document.getElementById('admin-user-modal'); modal.classList.add('opacity-0'); setTimeout(function() { modal.classList.add('hidden'); }, 300); }
 
+    function renderFactoryRolesInModal(selectedRoles) {
+      var roles = (window.appData.factoryOptions||[]).filter(function(o){return o.type==='Role';});
+      var el = document.getElementById('admin-factory-roles'); if(!el) return;
+      if(!roles.length){el.innerHTML='<p class="text-xs text-appleGrayText col-span-full">尚未設定原廠角色選項（請在 FactoryOptions 工作表新增）</p>';return;}
+      var sel={};(selectedRoles||'').split(',').forEach(function(s){if(s.trim())sel[s.trim()]=true;});
+      el.innerHTML=roles.map(function(r){
+        return '<label class="flex items-center gap-2 cursor-pointer select-none"><input type="checkbox" class="factory-role-cb w-4 h-4 rounded text-appleBlue" value="'+r.code+'" '+(sel[r.code]?'checked':'')+'>'+
+          '<span class="text-sm text-appleDarkText">'+r.label+'</span></label>';
+      }).join('');
+    }
+
+    function renderFactoryCertsInModal(certsJson) {
+      var certs=(window.appData.factoryOptions||[]).filter(function(o){return o.type==='Cert';});
+      var el=document.getElementById('admin-factory-certs'); if(!el) return;
+      if(!certs.length){el.innerHTML='<p class="text-xs text-appleGrayText">尚未設定原廠檢定選項（請在 FactoryOptions 工作表新增）</p>';return;}
+      var saved={};
+      try{JSON.parse(certsJson||'[]').forEach(function(c){saved[c.code]=c;});}catch(e){}
+      el.innerHTML=certs.map(function(c){
+        var s=saved[c.code]||null;
+        return '<div class="border border-appleBorder rounded-xl overflow-hidden">'+
+          '<label class="flex items-center gap-2 cursor-pointer px-3 py-2.5 bg-appleBg hover:bg-appleBlue/5 transition-colors">'+
+          '<input type="checkbox" class="factory-cert-cb w-4 h-4 rounded text-appleBlue" value="'+c.code+'" '+(s?'checked':'')+' onchange="toggleCertDetails(this,\''+c.code+'\')">'+
+          '<span class="text-sm font-bold text-appleDarkText">'+c.label+'</span></label>'+
+          '<div id="cert-d-'+c.code+'" class="'+(s?'':'hidden')+' px-4 py-3 bg-appleCard border-t border-appleBorder grid grid-cols-2 gap-3">'+
+          '<div><label class="block text-[10px] font-bold text-appleGrayText mb-1">通過日期</label>'+
+          '<input type="date" class="cert-pass-date w-full bg-appleBg border border-appleBorder rounded-lg px-2 py-1.5 text-xs" data-code="'+c.code+'" value="'+(s&&s.passDate?s.passDate:'')+'"></div>'+
+          '<div><label class="block text-[10px] font-bold text-appleGrayText mb-1">效期至</label>'+
+          '<input type="date" class="cert-validity w-full bg-appleBg border border-appleBorder rounded-lg px-2 py-1.5 text-xs" data-code="'+c.code+'" value="'+(s&&s.validity?s.validity:'')+'"></div>'+
+          '</div></div>';
+      }).join('');
+    }
+
+    function toggleCertDetails(cb,code){
+      var d=document.getElementById('cert-d-'+code); if(!d) return;
+      d.classList[cb.checked?'remove':'add']('hidden');
+    }
+
+    function getSelectedFactoryRoles(){
+      return Array.prototype.map.call(document.querySelectorAll('.factory-role-cb:checked'),function(cb){return cb.value;}).join(',');
+    }
+
+    function getSelectedCertifications(){
+      var res=[];
+      document.querySelectorAll('.factory-cert-cb:checked').forEach(function(cb){
+        var code=cb.value;
+        var pd=document.querySelector('.cert-pass-date[data-code="'+code+'"]');
+        var vd=document.querySelector('.cert-validity[data-code="'+code+'"]');
+        res.push({code:code,passDate:pd?pd.value:'',validity:vd?vd.value:''});
+      });
+      return JSON.stringify(res);
+    }
+
     function saveAdminUser() {
       var email = document.getElementById('admin-user-email').value.trim(); var password = document.getElementById('admin-user-password').value.trim(); var name = document.getElementById('admin-user-name').value.trim();
       if(!email || !password || !name) return alert("資料填寫不完整！");
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert("Email 格式錯誤！");
       if (password.length < 8) return alert("密碼最少 8 碼！");
       var selectedLevel = 'L0'; var lvlRadios = document.getElementsByName('adminUserLevel'); for(var i=0; i<lvlRadios.length; i++) { if(lvlRadios[i].checked) selectedLevel = lvlRadios[i].value; }
-      var userData = { email: email, password: password, name: name, hireDate: document.getElementById('admin-user-hiredate').value, channelCategory: document.getElementById('admin-user-channelcategory').value, channelName: document.getElementById('admin-user-channelname').value, storeName: document.getElementById('admin-user-storename').value, storeRole: document.getElementById('admin-user-storerole').value, level: selectedLevel };
+      var userData = { email: email, password: password, name: name, hireDate: document.getElementById('admin-user-hiredate').value, channelCategory: document.getElementById('admin-user-channelcategory').value, channelName: document.getElementById('admin-user-channelname').value, storeName: document.getElementById('admin-user-storename').value, storeRole: document.getElementById('admin-user-storerole').value, level: selectedLevel, factoryRoles: getSelectedFactoryRoles(), certifications: getSelectedCertifications() };
       var btn = document.getElementById('admin-user-save-btn'); var spinner = document.getElementById('admin-user-save-spinner');
       btn.disabled = true; spinner.classList.remove('hidden');
       var existingIdx = -1; for(var i=0; i<window.appData.adminUsers.length; i++) { if(window.appData.adminUsers[i].email === email) existingIdx = i; }

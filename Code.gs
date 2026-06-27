@@ -141,8 +141,37 @@ function getSheetDataAsObjects(sheetName) {
 // ==========================================
 //  登入後取得初始資料
 // ==========================================
+
+// ==========================================
+//  FactoryOptions 工作表：自動建立（首次執行）
+// ==========================================
+function ensureFactoryOptionsSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("FactoryOptions");
+  if (sheet) return sheet;
+  sheet = ss.insertSheet("FactoryOptions");
+  sheet.getRange(1, 1, 1, 3).setValues([["Type", "Code", "Label"]]);
+  var rows = [
+    ["Role", "AAR_MASTER",      "AAR Master"],
+    ["Role", "MONO_AAR",        "Mono AAR"],
+    ["Role", "RETAIL_LEAD",     "Retail Lead"],
+    ["Role", "BUSINESS_EXPERT", "Business Expert"],
+    ["Role", "CREATIVE_PRO",    "Creative Pro"],
+    ["Cert", "IPHONE_CERT",     "iPhone 檢定"],
+    ["Cert", "IPAD_CERT",       "iPad 檢定"],
+    ["Cert", "MAC_CERT",        "Mac 檢定"],
+    ["Cert", "WATCH_CERT",      "Apple Watch 檢定"],
+    ["Cert", "AIRPODS_CERT",    "AirPods 檢定"],
+    ["Cert", "TV_CERT",         "Apple TV 檢定"]
+  ];
+  sheet.getRange(2, 1, rows.length, 3).setValues(rows);
+  return sheet;
+}
+
 function getInitialDataForUser(activeEmail, userRow) {
+  ensureFactoryOptionsSheet();
   var users             = getSheetDataAsObjects("Users");
+  var factoryOptionsData = getSheetDataAsObjects("FactoryOptions") || [];
   var playlists         = getSheetDataAsObjects("Playlists");
   var videos            = getSheetDataAsObjects("Videos");
   var channelCategories = getSheetDataAsObjects("ChannelCategories");
@@ -249,7 +278,9 @@ function getInitialDataForUser(activeEmail, userRow) {
       email: users[i].Email, name: users[i].Name,
       channelCategory: users[i].ChannelCategory, channelName: users[i].ChannelName,
       storeName: users[i].StoreName, storeRole: users[i].StoreRole,
-      level: users[i].Level, hireDate: users[i].HireDate
+      level: users[i].Level, hireDate: users[i].HireDate,
+      factoryRoles: users[i].FactoryRoles || '',
+      certifications: users[i].Certifications || ''  
     });
   }
 
@@ -265,6 +296,7 @@ function getInitialDataForUser(activeEmail, userRow) {
       channelNames: channelNames.map(function(c) { return { name: c.ChannelName, parent: c.ParentCategory }; }),
       storeNames:   storeNames.map(function(s)   { return { name: s.StoreName,   parent: s.ParentChannel  }; }),
       adminUsers: adminUsersFormatted,
+      factoryOptions: factoryOptionsData.map(function(o){ return { type: String(o.Type||''), code: String(o.Code||''), label: String(o.Label||'') }; }),
       adminFavorites: allFavs.map(function(f){ return { email: (f.Email||'').toLowerCase(), videoId: f.VideoID }; })
     }
   };
@@ -458,6 +490,8 @@ function saveAdminUser(email, data) {
       "HireDate": data.hireDate, "ChannelCategory": data.channelCategory,
       "ChannelName": data.channelName, "StoreName": data.storeName,
       "StoreRole": data.storeRole, "Level": data.level
+          "FactoryRoles":     String(data.factoryRoles   || ''),
+      "Certifications":   String(data.certifications || '')
     });
     return { status: 'success' };
   } catch(e) { return { status: 'error', message: e.message }; }
