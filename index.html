@@ -1,0 +1,2468 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title> Sales Training 互動影片學習平台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    //  注入 Tailwind CSS 的自訂設計規範
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { appleBg: '#F5F5F7', appleDarkText: '#1D1D1F', appleGrayText: '#86868B', appleBlue: '#0071E3', appleGreen: '#34C759', appleBorder: '#E8E8ED', appleCard: '#FFFFFF', appleDanger: '#FF3B30' },
+          fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .blur-backdrop { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+    .aspect-video { aspect-ratio: 16 / 9; }
+    input:checked ~ .toggle-bg { background-color: #34C759; }
+    input:checked ~ .toggle-dot { transform: translateX(100%); }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #E8E8ED; border-radius: 10px; }
+  </style>
+
+  <script>
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+      var errBox = document.getElementById('loader-error');
+      var spinner = document.getElementById('loader-spinner');
+      var text = document.getElementById('loader-text');
+      if (spinner) spinner.style.display = 'none';
+      if (text) { text.innerText = '❌ 系統啟動失敗'; text.style.color = 'red'; }
+      if (errBox) { errBox.innerText = '錯誤: ' + msg; errBox.classList.remove('hidden'); }
+      return false;
+    };
+  </script>
+</head>
+<body class="bg-appleBg text-appleDarkText antialiased min-h-screen pb-24 flex flex-col font-sans select-none overflow-x-hidden">
+
+  <!-- =================  登入畫面 / 系統載入遮罩 ================= -->
+  <div id="app-loader" class="fixed inset-0 z-50 bg-appleBg flex flex-col justify-center items-center p-6">
+    <!-- 登入表單 -->
+    <div id="login-box" class="w-full max-w-sm">
+      <div class="flex items-center justify-center mb-8">
+        <h1 class="text-2xl font-bold text-appleDarkText"> Sales Training</h1>
+      </div>
+      <div class="bg-appleCard border border-appleBorder rounded-2xl shadow-sm p-6 space-y-4">
+        <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">帳號 (Email)</label><input type="email" id="login-email" placeholder="your@email.com" autocomplete="email" class="w-full bg-appleBg border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all"></div>
+        <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">密碼</label><input type="password" id="login-password" placeholder="請輸入密碼" autocomplete="current-password" class="w-full bg-appleBg border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all"></div>
+        <div id="login-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3"></div>
+        <button type="button" id="login-btn" onclick="doLogin()" class="w-full bg-appleBlue hover:bg-blue-600 active:scale-95 text-white py-3 rounded-xl font-bold text-sm transition-all shadow-sm flex items-center justify-center space-x-2"><i data-lucide="log-in" class="w-4 h-4"></i><span>登入</span></button>
+      </div>
+    </div>
+    <!-- 載入中 Spinner（登入後顯示） -->
+    <div id="login-loading" class="hidden flex-col items-center space-y-3">
+      <div id="loader-spinner" class="w-12 h-12 border-4 border-appleBlue/20 border-t-appleBlue rounded-full animate-spin"></div>
+      <p id="loader-text" class="text-sm font-bold text-appleDarkText tracking-wider">正在載入資料...</p>
+    </div>
+    <div id="loader-error" class="hidden mt-6 w-full max-w-lg bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl text-sm font-mono break-all shadow-sm whitespace-pre-wrap"></div>
+  </div>
+
+  <!-- =================  頂部導覽列 ================= -->
+  <header id="app-header" class="sticky top-0 z-40 bg-appleBg/80 blur-backdrop border-b border-appleBorder/60 px-6 py-4 flex justify-between items-center hidden">
+    <div class="flex items-center"><h1 class="text-xl font-bold tracking-tight text-appleDarkText"> Sales Training</h1></div>
+    <div class="flex items-center space-x-3 bg-appleCard/80 px-3 py-1.5 rounded-2xl border border-appleBorder shadow-sm">
+      <div class="w-8 h-8 rounded-full bg-appleBlue/10 flex items-center justify-center shrink-0"><i data-lucide="user" class="w-4 h-4 text-appleBlue"></i></div>
+      <div class="text-right">
+        <p class="text-xs font-bold text-appleDarkText" id="header-user-name">載入中...</p>
+        <p class="text-[10px] text-appleGrayText" id="header-user-email">請稍候</p>
+        <p class="text-[10px] text-appleBlue font-bold mt-0.5" id="header-user-store"></p>
+      </div>
+    </div>
+  </header>
+
+  <main id="app-main" class="flex-grow max-w-5xl w-full mx-auto px-4 py-6 md:px-8 hidden relative">
+    
+    <!-- ================= 視圖 1：前台首頁 ================= -->
+    <section id="section-home" class="space-y-6">
+      <div class="flex items-center space-x-3 w-full">
+        <button type="button" id="btn-favorite-view" onclick="toggleFavoriteView()" class="flex items-center justify-center space-x-1.5 px-4 py-3.5 bg-appleCard border border-appleBorder rounded-2xl shadow-sm transition-colors shrink-0 text-appleDarkText font-medium text-sm">
+          <i data-lucide="heart" id="icon-favorite-view" class="w-5 h-5 text-appleGrayText transition-colors"></i>
+          <span>收藏</span>
+        </button>
+        <div class="relative w-full">
+          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i data-lucide="search" class="w-5 h-5 text-appleGrayText"></i></div>
+          <input type="text" id="video-search-input" placeholder="搜尋影片標題關鍵字..." class="w-full bg-appleCard border border-appleBorder rounded-2xl py-3.5 pl-11 pr-4 text-sm font-medium text-appleDarkText placeholder-appleGrayText shadow-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all">
+        </div>
+      </div>
+      
+      <div class="space-y-3">
+        <div class="overflow-x-auto no-scrollbar flex space-x-2.5 pb-1 -mx-4 px-4" id="category-tabs"></div>
+        <div class="overflow-x-auto no-scrollbar flex space-x-2 pb-1 -mx-4 px-4 hidden transition-all duration-300" id="subcategory-tabs"></div>
+      </div>
+      
+      <div id="video-grid" class="space-y-10"></div>
+    </section>
+
+    <!-- ================= 視圖 2：進度與紀錄頁面 ================= -->
+    <section id="section-progress" class="hidden space-y-4">
+      <div class="flex flex-col md:flex-row justify-between items-center bg-appleCard p-4 rounded-2xl shadow-sm border border-appleBorder gap-4">
+        <div class="flex items-center space-x-3 self-start md:self-center shrink-0">
+          <div class="w-10 h-10 rounded-full bg-appleBlue/10 flex items-center justify-center shrink-0"><i data-lucide="bar-chart-2" class="w-5 h-5 text-appleBlue"></i></div>
+          <div class="hidden md:block"><h2 class="text-lg font-bold text-appleDarkText">學習進度</h2></div>
+        </div>
+        <div class="bg-appleBg p-1 rounded-xl flex space-x-1 border border-appleBorder w-full md:w-auto overflow-x-auto no-scrollbar justify-start">
+          <button type="button" id="progress-tab-dashboard" onclick="switchProgressTab('dashboard')" class="flex-1 md:flex-none px-4 md:px-6 py-1.5 rounded-lg text-sm font-bold bg-white shadow-sm text-appleDarkText transition-all whitespace-nowrap">Dashboard</button>
+          <button type="button" id="progress-tab-required" onclick="switchProgressTab('required')" class="flex-1 md:flex-none px-4 md:px-6 py-1.5 rounded-lg text-sm font-bold text-appleGrayText hover:text-appleDarkText hover:bg-appleBorder/40 transition-all whitespace-nowrap">必修</button>
+          <button type="button" id="progress-tab-favorites" onclick="switchProgressTab('favorites')" class="flex-1 md:flex-none px-4 md:px-6 py-1.5 rounded-lg text-sm font-bold text-appleGrayText hover:text-appleDarkText hover:bg-appleBorder/40 transition-all whitespace-nowrap">收藏</button>
+          <button type="button" id="progress-tab-overview" onclick="switchProgressTab('overview')" class="flex-1 md:flex-none px-4 md:px-6 py-1.5 rounded-lg text-sm font-bold text-appleGrayText hover:text-appleDarkText hover:bg-appleBorder/40 transition-all whitespace-nowrap">總覽</button>
+        </div>
+      </div>
+
+      <!-- 視圖：Dashboard 儀表板 -->
+      <div id="progress-dashboard-view" class="space-y-6"></div>
+
+      <!-- 共用搜尋篩選列 (必修/收藏/總覽) -->
+      <div id="progress-search-bar" class="hidden flex flex-col sm:flex-row gap-3 bg-appleCard p-4 rounded-2xl shadow-sm border border-appleBorder">
+          <div class="relative flex-grow">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i data-lucide="search" class="w-4 h-4 text-appleGrayText"></i></div>
+            <input type="text" id="progress-search-input" placeholder="搜尋影片名稱..." class="w-full bg-appleBg border border-appleBorder rounded-xl py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all">
+          </div>
+          <div class="flex gap-2 shrink-0">
+            <select id="progress-filter-status" class="bg-appleBg border border-appleBorder rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 cursor-pointer min-w-[140px]">
+               <option value="ALL">全部狀態</option>
+               <option value="已完成">已完成 (>=80%)</option>
+               <option value="未完成">未完成 (<80%)</option>
+            </select>
+          </div>
+      </div>
+
+      <!-- 視圖：必修播放列表 (Accordion 折疊區) -->
+      <div id="progress-required-view" class="hidden space-y-4"></div>
+
+      <!-- 視圖：一般總覽與收藏表格 -->
+      <div id="progress-standard-view" class="hidden bg-appleCard border border-appleBorder rounded-2xl shadow-sm overflow-hidden flex flex-col">
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+              <thead class="bg-appleBg/50 text-appleGrayText font-semibold text-xs uppercase tracking-wider">
+                <tr><th class="px-5 py-4 w-[55%]">影片資訊</th><th class="px-5 py-4 text-center">觀看數據</th><th class="px-5 py-4 text-center w-[25%]">學習進度</th></tr>
+              </thead>
+              <tbody id="progress-table-body" class="divide-y divide-appleBorder/60"></tbody>
+            </table>
+          </div>
+          <div class="bg-appleBg/40 border-t border-appleBorder px-5 py-3 flex justify-between items-center shrink-0">
+            <div class="flex items-center space-x-2"><span class="text-xs font-medium text-appleGrayText">每頁顯示</span><select id="progress-items-per-page" class="bg-appleCard border border-appleBorder rounded-lg text-xs font-medium px-2 py-1.5 focus:outline-none cursor-pointer"><option value="10">10 筆</option><option value="20">20 筆</option><option value="ALL">ALL</option></select></div>
+            <div class="flex items-center space-x-4"><span class="text-xs font-bold text-appleDarkText" id="progress-page-info">第 1 / 1 頁</span><div class="flex space-x-1"><button type="button" id="progress-btn-prev" onclick="changeProgressPage(-1)" class="p-1.5 rounded-lg bg-appleCard border border-appleBorder text-appleGrayText hover:text-appleDarkText hover:bg-appleBg disabled:opacity-30 disabled:hover:bg-appleCard transition-colors"><i data-lucide="chevron-left" class="w-4 h-4"></i></button><button type="button" id="progress-btn-next" onclick="changeProgressPage(1)" class="p-1.5 rounded-lg bg-appleCard border border-appleBorder text-appleGrayText hover:text-appleDarkText hover:bg-appleBg disabled:opacity-30 disabled:hover:bg-appleCard transition-colors"><i data-lucide="chevron-right" class="w-4 h-4"></i></button></div></div>
+          </div>
+      </div>
+    </section>
+    
+    <!-- ================= 視圖 3：後台管理系統 ================= -->
+    <section id="section-admin" class="hidden space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-center bg-appleCard p-4 rounded-2xl shadow-sm border border-appleBorder gap-4">
+        <div class="flex items-center space-x-3 self-start sm:self-center shrink-0">
+          <div class="w-10 h-10 rounded-full bg-appleBlue/10 flex items-center justify-center shrink-0"><i data-lucide="settings" class="w-5 h-5 text-appleBlue"></i></div>
+          <div class="hidden sm:block"><h2 class="text-lg font-bold text-appleDarkText">後台管理</h2></div>
+        </div>
+        <div class="bg-appleBg p-1 rounded-xl flex space-x-1 border border-appleBorder w-full sm:w-auto overflow-x-auto no-scrollbar">
+          <!-- 後台主頁籤 -->
+          <button type="button" id="admin-tab-dashboard" onclick="switchAdminTab('dashboard')" class="flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-sm font-bold bg-white shadow-sm text-appleDarkText transition-all whitespace-nowrap">Dashboard</button>
+          <button type="button" id="admin-tab-video" onclick="switchAdminTab('video')" class="flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-sm font-bold text-appleGrayText hover:text-appleDarkText hover:bg-appleBorder/40 transition-all whitespace-nowrap">影片維護</button>
+          <button type="button" id="admin-tab-playlist" onclick="switchAdminTab('playlist')" class="flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-sm font-bold text-appleGrayText hover:text-appleDarkText hover:bg-appleBorder/40 transition-all whitespace-nowrap">播放列表</button>
+          <button type="button" id="admin-tab-user" onclick="switchAdminTab('user')" class="flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-sm font-bold text-appleGrayText hover:text-appleDarkText hover:bg-appleBorder/40 transition-all whitespace-nowrap">帳號管理</button>
+        </div>
+        <div class="self-end sm:self-center shrink-0 flex space-x-2" id="admin-action-buttons">
+          <button type="button" id="btn-add-video" onclick="openAdminVideoModal()" class="hidden flex items-center space-x-1 bg-appleBlue hover:bg-blue-600 text-white px-3 py-2 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95"><i data-lucide="plus" class="w-4 h-4"></i><span class="hidden sm:inline">新增影片</span><span class="sm:hidden">影片</span></button>
+          <button type="button" id="btn-add-playlist" onclick="openAdminPlaylistModal()" class="hidden flex items-center space-x-1 bg-appleBlue hover:bg-blue-600 text-white px-3 py-2 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95"><i data-lucide="list-plus" class="w-4 h-4"></i><span class="hidden sm:inline">新增列表</span><span class="sm:hidden">列表</span></button>
+          <button type="button" id="btn-add-user" onclick="openAdminUserModal()" class="hidden flex items-center space-x-1 bg-appleBlue hover:bg-blue-600 text-white px-3 py-2 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95"><i data-lucide="user-plus" class="w-4 h-4"></i><span class="hidden sm:inline">新增帳號</span><span class="sm:hidden">帳號</span></button>
+        </div>
+      </div>
+
+      <!-- 後台 Dashboard 視圖 -->
+      <div id="admin-dashboard-view" class="space-y-4">
+        <!-- Dashboard 子頁籤切換 -->
+        <div class="flex justify-center sm:justify-start">
+          <div class="bg-appleBg p-1 rounded-xl flex space-x-1 border border-appleBorder overflow-x-auto no-scrollbar w-full sm:w-auto">
+            <button type="button" id="admin-dash-tab-platform" onclick="switchAdminDashTab('platform')" class="flex-1 sm:flex-none px-5 py-1.5 rounded-lg text-sm font-bold bg-white shadow-sm text-appleDarkText transition-all whitespace-nowrap">平台數據</button>
+            <button type="button" id="admin-dash-tab-channel" onclick="switchAdminDashTab('channel')" class="flex-1 sm:flex-none px-5 py-1.5 rounded-lg text-sm font-bold text-appleGrayText hover:text-appleDarkText hover:bg-appleBorder/40 transition-all whitespace-nowrap">通路觀看紀錄</button>
+            <button type="button" id="admin-dash-tab-personal" onclick="switchAdminDashTab('personal')" class="flex-1 sm:flex-none px-5 py-1.5 rounded-lg text-sm font-bold text-appleGrayText hover:text-appleDarkText hover:bg-appleBorder/40 transition-all whitespace-nowrap">個人觀看紀錄</button>
+          </div>
+        </div>
+        <!-- Dashboard 主內容渲染區 -->
+        <div id="admin-dashboard-content" class="bg-appleCard border border-appleBorder rounded-2xl shadow-sm p-4 md:p-6 min-h-[400px]"></div>
+      </div>
+
+      <!-- 後台子視圖 1：影片維護區 -->
+      <div id="admin-video-view" class="space-y-4 hidden">
+        <div class="flex flex-col sm:flex-row gap-3 bg-appleCard p-4 rounded-2xl shadow-sm border border-appleBorder">
+          <div class="relative flex-grow"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i data-lucide="search" class="w-4 h-4 text-appleGrayText"></i></div><input type="text" id="admin-search-input" placeholder="搜尋影片標題或 ID..." class="w-full bg-appleBg border border-appleBorder rounded-xl py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all"></div>
+          <div class="flex gap-2"><select id="admin-filter-category" class="bg-appleBg border border-appleBorder rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 cursor-pointer min-w-[100px]"></select><select id="admin-filter-subcategory" class="bg-appleBg border border-appleBorder rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 cursor-pointer min-w-[100px]"><option value="ALL">ALL</option></select></div>
+        </div>
+        <div class="bg-appleCard border border-appleBorder rounded-2xl shadow-sm overflow-hidden flex flex-col">
+          <div class="overflow-x-auto custom-scrollbar"><table class="w-full text-left text-sm whitespace-nowrap"><thead class="bg-appleBg/50 text-appleGrayText font-semibold text-xs uppercase tracking-wider"><tr><th class="px-5 py-4">影片資訊</th><th class="px-5 py-4">分類 / 子分類</th><th class="px-5 py-4 text-center">狀態</th><th class="px-5 py-4 text-right">操作</th></tr></thead><tbody id="admin-video-table-body" class="divide-y divide-appleBorder/60"></tbody></table></div>
+          <div class="bg-appleBg/40 border-t border-appleBorder px-5 py-3 flex justify-between items-center shrink-0">
+            <div class="flex items-center space-x-2"><span class="text-xs font-medium text-appleGrayText">每頁顯示</span><select id="admin-items-per-page" class="bg-appleCard border border-appleBorder rounded-lg text-xs font-medium px-2 py-1.5 focus:outline-none cursor-pointer"><option value="10">10 筆</option><option value="20">20 筆</option><option value="ALL">ALL</option></select></div>
+            <div class="flex items-center space-x-4"><span class="text-xs font-bold text-appleDarkText" id="admin-page-info">第 1 / 1 頁</span><div class="flex space-x-1"><button type="button" id="admin-btn-prev" onclick="changeAdminPage(-1)" class="p-1.5 rounded-lg bg-appleCard border border-appleBorder text-appleGrayText hover:text-appleDarkText hover:bg-appleBg disabled:opacity-30 disabled:hover:bg-appleCard transition-colors"><i data-lucide="chevron-left" class="w-4 h-4"></i></button><button type="button" id="admin-btn-next" onclick="changeAdminPage(1)" class="p-1.5 rounded-lg bg-appleCard border border-appleBorder text-appleGrayText hover:text-appleDarkText hover:bg-appleBg disabled:opacity-30 disabled:hover:bg-appleCard transition-colors"><i data-lucide="chevron-right" class="w-4 h-4"></i></button></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 後台子視圖 2：播放列表管理區 -->
+      <div id="admin-playlist-view" class="space-y-4 hidden">
+        <div class="flex flex-col sm:flex-row gap-3 bg-appleCard p-4 rounded-2xl shadow-sm border border-appleBorder">
+          <div class="relative flex-grow"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i data-lucide="search" class="w-4 h-4 text-appleGrayText"></i></div><input type="text" id="admin-playlist-search-input" placeholder="搜尋列表名稱..." class="w-full bg-appleBg border border-appleBorder rounded-xl py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all"></div>
+        </div>
+        <div class="bg-appleCard border border-appleBorder rounded-2xl shadow-sm overflow-hidden flex flex-col">
+          <div class="overflow-x-auto custom-scrollbar"><table class="w-full text-left text-sm whitespace-nowrap"><thead class="bg-appleBg/50 text-appleGrayText font-semibold text-xs uppercase tracking-wider"><tr><th class="px-5 py-4">播放列表資訊</th><th class="px-5 py-4 text-center">推播對象 (Level)</th><th class="px-5 py-4 text-center">狀態 / 排序</th><th class="px-5 py-4 text-center">影片數</th><th class="px-5 py-4 text-right">操作</th></tr></thead><tbody id="admin-playlist-table-body" class="divide-y divide-appleBorder/60"></tbody></table></div>
+          <div class="bg-appleBg/40 border-t border-appleBorder px-5 py-3 flex justify-between items-center shrink-0">
+            <div class="flex items-center space-x-2"><span class="text-xs font-medium text-appleGrayText">每頁顯示</span><select id="admin-playlist-items-per-page" class="bg-appleCard border border-appleBorder rounded-lg text-xs font-medium px-2 py-1.5 focus:outline-none cursor-pointer"><option value="10">10 筆</option><option value="20">20 筆</option><option value="ALL">ALL</option></select></div>
+            <div class="flex items-center space-x-4"><span class="text-xs font-bold text-appleDarkText" id="admin-playlist-page-info">第 1 / 1 頁</span><div class="flex space-x-1"><button type="button" id="admin-playlist-btn-prev" onclick="changeAdminPlaylistPage(-1)" class="p-1.5 rounded-lg bg-appleCard border border-appleBorder text-appleGrayText hover:text-appleDarkText hover:bg-appleBg disabled:opacity-30 disabled:hover:bg-appleCard transition-colors"><i data-lucide="chevron-left" class="w-4 h-4"></i></button><button type="button" id="admin-playlist-btn-next" onclick="changeAdminPlaylistPage(1)" class="p-1.5 rounded-lg bg-appleCard border border-appleBorder text-appleGrayText hover:text-appleDarkText hover:bg-appleBg disabled:opacity-30 disabled:hover:bg-appleCard transition-colors"><i data-lucide="chevron-right" class="w-4 h-4"></i></button></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 後台子視圖 3：帳號管理區 -->
+      <div id="admin-user-view" class="space-y-4 hidden">
+        <div class="flex flex-col sm:flex-row gap-3 bg-appleCard p-4 rounded-2xl shadow-sm border border-appleBorder">
+          <div class="relative flex-grow"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i data-lucide="search" class="w-4 h-4 text-appleGrayText"></i></div><input type="text" id="admin-user-search-input" placeholder="搜尋 Email 或 姓名..." class="w-full bg-appleBg border border-appleBorder rounded-xl py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all"></div>
+        </div>
+        <div class="bg-appleCard border border-appleBorder rounded-2xl shadow-sm overflow-hidden flex flex-col">
+          <div class="overflow-x-auto custom-scrollbar"><table class="w-full text-left text-sm whitespace-nowrap"><thead class="bg-appleBg/50 text-appleGrayText font-semibold text-xs uppercase tracking-wider"><tr><th class="px-5 py-4">帳號資訊</th><th class="px-5 py-4">所屬門市</th><th class="px-5 py-4">權限狀態</th><th class="px-5 py-4 text-right">操作</th></tr></thead><tbody id="admin-user-table-body" class="divide-y divide-appleBorder/60"></tbody></table></div>
+          <div class="bg-appleBg/40 border-t border-appleBorder px-5 py-3 flex justify-between items-center shrink-0">
+            <div class="flex items-center space-x-2"><span class="text-xs font-medium text-appleGrayText">每頁顯示</span><select id="admin-user-items-per-page" class="bg-appleCard border border-appleBorder rounded-lg text-xs font-medium px-2 py-1.5 focus:outline-none cursor-pointer"><option value="10">10 筆</option><option value="20">20 筆</option><option value="ALL">ALL</option></select></div>
+            <div class="flex items-center space-x-4"><span class="text-xs font-bold text-appleDarkText" id="admin-user-page-info">第 1 / 1 頁</span><div class="flex space-x-1"><button type="button" id="admin-user-btn-prev" onclick="changeAdminUserPage(-1)" class="p-1.5 rounded-lg bg-appleCard border border-appleBorder text-appleGrayText hover:text-appleDarkText hover:bg-appleBg disabled:opacity-30 disabled:hover:bg-appleCard transition-colors"><i data-lucide="chevron-left" class="w-4 h-4"></i></button><button type="button" id="admin-user-btn-next" onclick="changeAdminUserPage(1)" class="p-1.5 rounded-lg bg-appleCard border border-appleBorder text-appleGrayText hover:text-appleDarkText hover:bg-appleBg disabled:opacity-30 disabled:hover:bg-appleCard transition-colors"><i data-lucide="chevron-right" class="w-4 h-4"></i></button></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- =================  底部行動版導覽列 ================= -->
+  <nav id="app-nav" class="fixed bottom-0 left-0 right-0 z-40 bg-appleCard/80 blur-backdrop border-t border-appleBorder/60 flex justify-around items-center py-3 px-4 shadow-xl hidden">
+    <button type="button" onclick="switchTab('home')" id="tab-home" class="flex flex-row items-center justify-center text-appleBlue flex-1 py-2 rounded-xl transition-colors"><i data-lucide="play" class="w-6 h-6"></i></button>
+    <button type="button" onclick="switchTab('progress')" id="tab-progress" class="flex flex-row items-center justify-center text-appleGrayText hover:text-appleDarkText flex-1 py-2 rounded-xl transition-colors"><i data-lucide="bar-chart-2" class="w-6 h-6"></i></button>
+    <button type="button" onclick="switchTab('admin')" id="tab-admin" class="flex flex-row items-center justify-center text-appleGrayText hover:text-appleDarkText flex-1 py-2 rounded-xl transition-colors"><i data-lucide="settings" class="w-6 h-6"></i></button>
+  </nav>
+
+  <!-- =================  燈箱：影片播放 ================= -->
+  <div id="video-modal" class="fixed inset-0 z-50 bg-black/95 blur-backdrop flex flex-col items-center justify-center p-4 md:p-8 transition-all duration-300 hidden opacity-0">
+    <div class="w-full max-w-4xl flex flex-col space-y-4">
+      <div class="flex justify-between items-start text-white">
+        <h3 id="modal-video-title" class="text-lg md:text-xl font-bold leading-snug flex-1 pr-4 flex items-center line-clamp-1">影片標題</h3>
+        <div class="flex items-center space-x-4 shrink-0">
+          <button type="button" id="modal-fav-btn" onclick="toggleModalFavorite()" class="text-white hover:scale-110 transition-transform flex items-center justify-center p-2"><i data-lucide="heart" id="modal-fav-icon" class="w-6 h-6"></i></button>
+          <button type="button" onclick="closeVideoPlayer()" class="text-white/70 hover:text-white transition-colors bg-white/10 rounded-full p-2"><i data-lucide="x" class="w-6 h-6"></i></button>
+        </div>
+      </div>
+      <div class="aspect-video w-full bg-black rounded-2xl overflow-hidden shadow-2xl relative border border-white/10" id="yt-player-wrapper">
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-white/50 space-y-3 pointer-events-none"><div class="w-8 h-8 border-4 border-white/20 border-t-white/80 rounded-full animate-spin"></div><p class="text-xs font-bold tracking-widest">播放器連線中...</p></div>
+        <div id="yt-player" class="absolute inset-0 w-full h-full z-10"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================  燈箱：管理後台編輯影片 ================= -->
+  <div id="admin-video-modal" class="fixed inset-0 z-50 bg-appleDarkText/40 blur-backdrop flex flex-col justify-end md:justify-center items-center transition-all duration-300 hidden opacity-0 p-0 md:p-6">
+    <div class="w-full max-w-2xl bg-appleBg md:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-appleCard border-b border-appleBorder px-6 py-4 flex justify-between items-center shrink-0">
+        <h3 id="admin-modal-title" class="text-lg font-bold text-appleDarkText">新增影片</h3>
+        <button type="button" onclick="closeAdminVideoModal()" class="text-appleGrayText hover:text-appleDarkText bg-appleBg rounded-full p-1.5 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 overflow-y-auto custom-scrollbar flex-grow space-y-5">
+        <div class="flex items-center justify-between bg-appleCard p-4 rounded-xl border border-appleBorder shadow-sm">
+          <div><label class="block text-xs font-bold text-appleGrayText uppercase tracking-wider mb-1">影片序號</label><input type="text" id="admin-id" readonly class="w-full bg-transparent border-none p-0 text-sm font-mono text-appleDarkText focus:ring-0 cursor-not-allowed"></div>
+          <div class="border-l border-appleBorder pl-6"><label class="block text-xs font-bold text-appleGrayText uppercase tracking-wider mb-2">發佈狀態</label><label class="flex items-center cursor-pointer space-x-3"><div class="relative"><input type="checkbox" id="admin-status" class="sr-only" onchange="updateAdminStatusText('admin-status', 'admin-status-text')"><div class="toggle-bg block bg-gray-300 w-11 h-6 rounded-full transition-colors duration-300"></div><div class="toggle-dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300"></div></div><span id="admin-status-text" class="text-sm font-bold text-appleDarkText">是</span></label></div>
+        </div>
+        <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">影片名稱 (Title)</label><input type="text" id="admin-title" placeholder="請輸入影片標題..." class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm"></div>
+        <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">YouTube 連結 (URL)</label><input type="text" id="admin-url" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm"></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">影片類別 (Category)</label><select id="admin-category" onchange="onAdminModalCategoryChange()" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm appearance-none cursor-pointer"></select></div>
+          <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">子類別 (SubCategory)</label><select id="admin-subcategory" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm appearance-none cursor-pointer"><option value="">(無)</option></select></div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-sm font-bold text-appleDarkText">可瀏覽的角色 (AllowedRoles)</label>
+            <label class="flex items-center space-x-1.5 cursor-pointer">
+              <input type="checkbox" id="admin-roles-select-all" onchange="toggleAllAdminRoles()" class="w-4 h-4 text-appleBlue rounded focus:ring-appleBlue transition-all">
+              <span class="text-xs font-bold text-appleGrayText">全選</span>
+            </label>
+          </div>
+          <div id="admin-roles-container" class="bg-appleCard border border-appleBorder rounded-xl p-4 grid grid-cols-2 md:grid-cols-3 gap-3 shadow-sm"></div>
+          <p class="text-[10px] text-appleGrayText mt-1.5 ml-1">若皆未勾選，預設為對所有人開放觀看。</p>
+        </div>
+      </div>
+      <div class="bg-appleCard border-t border-appleBorder px-6 py-4 flex justify-end space-x-3 shrink-0 pb-safe">
+        <input type="hidden" id="admin-created-at">
+        <button type="button" onclick="closeAdminVideoModal()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-appleDarkText bg-appleBg hover:bg-appleBorder/50 transition-colors">取消</button>
+        <button type="button" onclick="saveAdminVideo()" id="admin-save-btn" class="px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-appleBlue hover:bg-blue-600 transition-all shadow-sm flex items-center justify-center"><i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin hidden" id="admin-save-spinner"></i><span>儲存變更</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================  燈箱：管理後台編輯播放列表 ================= -->
+  <div id="admin-playlist-modal" class="fixed inset-0 z-50 bg-appleDarkText/40 blur-backdrop flex flex-col justify-end md:justify-center items-center transition-all duration-300 hidden opacity-0 p-0 md:p-6">
+    <div class="w-full max-w-5xl bg-appleBg md:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[85vh]">
+      <div class="bg-appleCard border-b border-appleBorder px-6 py-4 flex justify-between items-center shrink-0">
+        <h3 id="admin-playlist-modal-title" class="text-lg font-bold text-appleDarkText">新增播放列表</h3>
+        <button type="button" onclick="closeAdminPlaylistModal()" class="text-appleGrayText hover:text-appleDarkText bg-appleBg rounded-full p-1.5 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 overflow-y-auto custom-scrollbar flex-grow">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+          <div class="space-y-5">
+            <div class="flex items-center justify-between bg-appleCard p-4 rounded-xl border border-appleBorder shadow-sm">
+              <div><label class="block text-xs font-bold text-appleGrayText uppercase tracking-wider mb-1">列表序號</label><input type="text" id="admin-playlist-id" readonly class="w-full bg-transparent border-none p-0 text-sm font-mono text-appleDarkText focus:ring-0 cursor-not-allowed"></div>
+              <div class="border-l border-appleBorder pl-6"><label class="block text-xs font-bold text-appleGrayText uppercase tracking-wider mb-2">設為必修</label><label class="flex items-center cursor-pointer space-x-3"><div class="relative"><input type="checkbox" id="admin-playlist-isrequired" class="sr-only" onchange="updateAdminStatusText('admin-playlist-isrequired', 'admin-playlist-req-text')"><div class="toggle-bg block bg-gray-300 w-11 h-6 rounded-full transition-colors duration-300"></div><div class="toggle-dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300"></div></div><span id="admin-playlist-req-text" class="text-sm font-bold text-appleGrayText">否</span></label></div>
+            </div>
+            <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">播放列表名稱 (Playlist Name)</label><input type="text" id="admin-playlist-name" placeholder="請輸入列表名稱..." class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm"></div>
+            <div><label class="block text-sm font-bold text-appleDarkText mb-2.5">推播對象等級 (Target Level)</label><div class="flex flex-wrap items-center gap-x-4 gap-y-2 bg-appleCard border border-appleBorder rounded-xl px-4 py-3 shadow-sm"><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminPlaylistLevel" value="L0" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">L0</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminPlaylistLevel" value="L1" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">L1</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminPlaylistLevel" value="L2" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">L2</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminPlaylistLevel" value="L3" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">L3</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminPlaylistLevel" value="TT" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">TT</span></label></div></div>
+            <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">推播優先順序 (Sort Order)</label><input type="number" id="admin-playlist-sort" placeholder="1" value="99" min="1" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm"><p class="text-[10px] text-appleGrayText mt-1.5 ml-1">數字越小，推播順位越高。</p></div>
+          </div>
+          <div class="bg-appleCard border border-appleBorder rounded-2xl p-4 shadow-sm flex flex-col h-full min-h-[350px]">
+            <div class="flex items-center space-x-2 mb-3 shrink-0"><i data-lucide="list-video" class="w-5 h-5 text-appleBlue"></i><h4 class="text-sm font-bold text-appleDarkText">挑選影片與播放排序</h4></div>
+            <div class="flex space-x-2 mb-4 shrink-0 w-full items-center">
+              <select id="admin-playlist-video-select" onchange="checkPlaylistVideoSelect()" class="flex-1 min-w-0 bg-appleBg border border-appleBorder rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 cursor-pointer appearance-none truncate"></select>
+              <button type="button" id="btn-add-playlist-video" onclick="addVideoToPlaylist()" disabled class="bg-appleBlue text-white px-4 py-2 rounded-xl shadow-sm hover:bg-blue-600 transition-colors shrink-0 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"><span class="text-sm font-bold mr-1 hidden sm:inline">加入</span><i data-lucide="plus" class="w-4 h-4"></i></button>
+            </div>
+            <div class="flex-grow bg-appleBg border border-appleBorder rounded-xl p-2 overflow-y-auto custom-scrollbar" id="admin-playlist-video-list"></div>
+            <p class="text-[10px] text-appleGrayText mt-2 text-center shrink-0">使用上下箭頭調整影片播放順序</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-appleCard border-t border-appleBorder px-6 py-4 flex justify-end space-x-3 shrink-0 pb-safe">
+        <button type="button" onclick="closeAdminPlaylistModal()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-appleDarkText bg-appleBg hover:bg-appleBorder/50 transition-colors">取消</button>
+        <button type="button" onclick="saveAdminPlaylist()" id="admin-playlist-save-btn" class="px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-appleBlue hover:bg-blue-600 transition-all shadow-sm flex items-center justify-center"><i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin hidden" id="admin-playlist-save-spinner"></i><span>儲存變更</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================  燈箱：管理後台編輯帳號 ================= -->
+  <div id="admin-user-modal" class="fixed inset-0 z-50 bg-appleDarkText/40 blur-backdrop flex flex-col justify-end md:justify-center items-center transition-all duration-300 hidden opacity-0 p-0 md:p-6">
+    <div class="w-full max-w-3xl bg-appleBg md:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-appleCard border-b border-appleBorder px-6 py-4 flex justify-between items-center shrink-0">
+        <h3 id="admin-user-modal-title" class="text-lg font-bold text-appleDarkText">新增帳號</h3>
+        <button type="button" onclick="closeAdminUserModal()" class="text-appleGrayText hover:text-appleDarkText bg-appleBg rounded-full p-1.5 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 overflow-y-auto custom-scrollbar flex-grow space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">帳號 (Email)<span class="text-appleDanger ml-1">*</span></label><input type="email" id="admin-user-email" placeholder="example@apple.com" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm disabled:bg-appleBg disabled:text-appleGrayText"></div>
+          <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">密碼 (Password)<span class="text-appleDanger ml-1">*</span></label><div class="relative"><input type="password" id="admin-user-password" placeholder="8~20碼英數混合" value="abcd1234" minlength="8" maxlength="20" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm"><button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-appleGrayText hover:text-appleDarkText"><i data-lucide="eye" id="pwd-eye-icon" class="w-4 h-4"></i></button></div><p class="text-[10px] text-appleGrayText mt-1.5 ml-1">預設填入 abcd1234，最少 8 碼。</p></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">姓名 (Name)<span class="text-appleDanger ml-1">*</span></label><input type="text" id="admin-user-name" placeholder="請輸入姓名" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm"></div>
+          <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">到職日 (HireDate)</label><input type="date" id="admin-user-hiredate" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm"></div>
+        </div>
+        <div class="p-4 bg-appleCard border border-appleBorder rounded-xl shadow-sm space-y-4">
+          <div class="flex items-center space-x-2 mb-2"><i data-lucide="map-pin" class="w-4 h-4 text-appleBlue"></i><h4 class="text-sm font-bold text-appleDarkText">組織歸屬 (連動選單)</h4></div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div><label class="block text-xs font-bold text-appleGrayText mb-1.5">通路類別 (ChannelCategory)</label><select id="admin-user-channelcategory" onchange="onAdminUserCategoryChange()" class="w-full bg-appleBg border border-appleBorder rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 cursor-pointer appearance-none"></select></div>
+            <div><label class="block text-xs font-bold text-appleGrayText mb-1.5">經銷商 (ChannelName)</label><select id="admin-user-channelname" onchange="onAdminUserChannelChange()" disabled class="w-full bg-appleBg border border-appleBorder rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 cursor-pointer appearance-none disabled:opacity-50"></select></div>
+            <div><label class="block text-xs font-bold text-appleGrayText mb-1.5">門市名稱 (StoreName)</label><select id="admin-user-storename" disabled class="w-full bg-appleBg border border-appleBorder rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 cursor-pointer appearance-none disabled:opacity-50"></select></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">角色 (StoreRole)</label><select id="admin-user-storerole" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm appearance-none cursor-pointer"></select></div>
+          <div><label class="block text-sm font-bold text-appleDarkText mb-2.5">等級註記 (Level)</label><div class="flex flex-wrap items-center gap-x-4 gap-y-2 bg-appleCard border border-appleBorder rounded-xl px-4 py-2.5 shadow-sm"><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminUserLevel" value="L0" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">L0</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminUserLevel" value="L1" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">L1</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminUserLevel" value="L2" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">L2</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminUserLevel" value="L3" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">L3</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="adminUserLevel" value="TT" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-medium">TT</span></label></div></div>
+        </div>
+      </div>
+      <div class="bg-appleCard border-t border-appleBorder px-6 py-4 flex justify-end space-x-3 shrink-0 pb-safe">
+        <button type="button" onclick="closeAdminUserModal()" class="px-5 py-2.5 rounded-xl font-bold text-sm text-appleDarkText bg-appleBg hover:bg-appleBorder/50 transition-colors">取消</button>
+        <button type="button" onclick="saveAdminUser()" id="admin-user-save-btn" class="px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-appleBlue hover:bg-blue-600 transition-all shadow-sm flex items-center justify-center"><i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin hidden" id="admin-user-save-spinner"></i><span>儲存變更</span></button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    //  ★ 設定：部署後請將下方網址換成你的 GAS /exec URL ★
+    // ==========================================
+    var GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxbEyXCHFj_QJyMAl8_Hp_MrrLpoW6n0_-Jje31mYFdZ9WYheKwNECmtx3WuZgSozcfvQ/exec';
+    // 登入憑證（頁面重新整理即清除，不存入任何 Storage）
+    window.appCredentials = { email: '', password: '' };
+
+    // ==========================================
+    //  API 呼叫核心函式
+    //  Content-Type: text/plain 避開 CORS preflight
+    // ==========================================
+    function callAPI(action, params) {
+      var payload = Object.assign({ action: action, email: window.appCredentials.email, password: window.appCredentials.password }, params || {});
+      return fetch(GAS_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+        redirect: 'follow'
+      }).then(function(r) { return r.json(); });
+    }
+
+    // ==========================================
+    //  系統全域變數快取 (Global State)
+    // ==========================================
+    window.appData = { user: null, categories: [], subCategories: [], videos: [], favorites: [], roles: [], channelCategories: [], channelNames: [], storeNames: [], adminUsers: [], playlists: [], watchLogs: [], adminWatchLogs: [], watchEvents: [] };
+    
+    window.currentCategory = 'ALL'; window.currentSubCategory = 'ALL'; window.searchQuery = ''; window.isFavoriteView = false; 
+    
+    window.progressTab = 'dashboard'; window.progressSearchQuery = ''; window.progressFilterStatus = 'ALL'; window.progressCurrentPage = 1; window.progressItemsPerPage = 10;
+    window.expandedPlaylists = {}; 
+    
+    window.adminTab = 'dashboard'; window.adminDashTab = 'platform'; window.adminDashYear = new Date().getFullYear().toString();
+    
+    // 🚀 [更新] 排行榜獨立時間維度與自訂日期控制變數
+    window.adminVideoLeaderboardRange = 'week';
+    window.adminVideoLeaderboardStart = '';
+    window.adminVideoLeaderboardEnd = '';
+
+    window.adminUserLeaderboardRange = 'week';
+    window.adminUserLeaderboardStart = '';
+    window.adminUserLeaderboardEnd = '';
+
+    window.adminSearchQuery = ''; window.adminCategory = 'ALL'; window.adminSubCategory = 'ALL'; window.adminCurrentPage = 1; window.adminItemsPerPage = 10;
+    window.adminUserSearchQuery = ''; window.adminUserCurrentPage = 1; window.adminUserItemsPerPage = 10;
+    window.adminPlaylistSearchQuery = ''; window.adminPlaylistCurrentPage = 1; window.adminPlaylistItemsPerPage = 10;
+    window.modalTempVideoList = []; 
+    
+    var ytPlayer = null; window.isYtApiReady = false; window.activeModalVideoId = null; 
+    var watchTimer = null; var currentSession = { videoId: '', duration: 0, maxReachedTime: 0, isCompleted: false, totalDuration: 0 };
+
+    // ==========================================
+    //  核心 UI 狀態文字與連動輔助函式
+    // ==========================================
+    function updateAdminStatusText(checkboxId, textId) {
+      var elCheckbox = document.getElementById(checkboxId);
+      var elText = document.getElementById(textId);
+      if(!elCheckbox || !elText) return; 
+      var isChecked = elCheckbox.checked;
+      elText.innerText = isChecked ? "是" : "否";
+      elText.className = isChecked ? "text-sm font-bold text-appleGreen" : "text-sm font-bold text-appleGrayText";
+    }
+
+    function toggleAllAdminRoles() {
+      var selectAllCb = document.getElementById('admin-roles-select-all');
+      if (!selectAllCb) return;
+      var isChecked = selectAllCb.checked;
+      var roleCbs = document.querySelectorAll('.admin-role-checkbox');
+      for (var i = 0; i < roleCbs.length; i++) {
+        roleCbs[i].checked = isChecked;
+      }
+    }
+
+    function updateSelectAllState() {
+      var roleCbs = document.querySelectorAll('.admin-role-checkbox');
+      var selectAllCb = document.getElementById('admin-roles-select-all');
+      if (!selectAllCb || roleCbs.length === 0) return;
+      
+      var allChecked = true;
+      for (var i = 0; i < roleCbs.length; i++) {
+        if (!roleCbs[i].checked) {
+          allChecked = false;
+          break;
+        }
+      }
+      selectAllCb.checked = allChecked;
+    }
+
+    window.onYouTubeIframeAPIReady = function() { window.isYtApiReady = true; };
+    var tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0]; firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    function safeAddListener(id, event, callback) { var el = document.getElementById(id); if (el) el.addEventListener(event, callback); }
+
+    function crash(msg) {
+      var spinner = document.getElementById('loader-spinner');
+      var text = document.getElementById('loader-text');
+      var errBox = document.getElementById('loader-error');
+      if(spinner) spinner.style.display = 'none';
+      if(text) { text.innerText = "❌ 發生嚴重錯誤"; text.style.color = 'red'; }
+      if(errBox) { errBox.innerText = msg; errBox.classList.remove('hidden'); }
+    }
+
+    // ==========================================
+    //  系統初始化與後端資料載入
+    // ==========================================
+    // ==========================================
+    //  登入函式（取代原本的自動識別 Google 帳號）
+    // ==========================================
+    function doLogin() {
+      var email    = (document.getElementById('login-email').value || '').trim().toLowerCase();
+      var password = (document.getElementById('login-password').value || '').trim();
+      var errEl    = document.getElementById('login-error');
+
+      if (!email || !password) { errEl.innerText = '請填寫帳號與密碼'; errEl.classList.remove('hidden'); return; }
+      if (GAS_API_URL.indexOf('YOUR_SCRIPT_ID') !== -1) { errEl.innerText = '請先在 index.html 頂端設定 GAS_API_URL！'; errEl.classList.remove('hidden'); return; }
+
+      errEl.classList.add('hidden');
+      document.getElementById('login-box').classList.add('hidden');
+      document.getElementById('login-loading').classList.remove('hidden');
+      document.getElementById('login-loading').classList.add('flex');
+
+      window.appCredentials = { email: email, password: password };
+
+      callAPI('login', {})
+        .then(function(response) {
+          if (!response) throw new Error("伺服器回傳空值，可能是資料庫含有無法解析的格式。");
+          if (response.status === "error") {
+            document.getElementById('login-loading').classList.add('hidden');
+            document.getElementById('login-loading').classList.remove('flex');
+            document.getElementById('login-box').classList.remove('hidden');
+            errEl.innerText = response.message;
+            errEl.classList.remove('hidden');
+            return;
+          }
+
+          window.appData = response.data;
+          window.appData.subCategories    = window.appData.subCategories    || [];
+          window.appData.roles            = window.appData.roles            || [];
+          window.appData.channelCategories= window.appData.channelCategories|| [];
+          window.appData.channelNames     = window.appData.channelNames     || [];
+          window.appData.storeNames       = window.appData.storeNames       || [];
+          window.appData.adminUsers       = window.appData.adminUsers       || [];
+          window.appData.playlists        = window.appData.playlists        || [];
+          window.appData.videos           = window.appData.videos           || [];
+          window.appData.favorites        = window.appData.favorites        || [];
+          window.appData.watchLogs        = window.appData.watchLogs        || [];
+          window.appData.adminWatchLogs   = window.appData.adminWatchLogs   || [];
+          window.appData.watchEvents      = window.appData.watchEvents      || [];
+
+          document.getElementById('app-loader').style.display = 'none';
+          document.getElementById('app-header').classList.remove('hidden');
+          document.getElementById('app-main').classList.remove('hidden');
+          document.getElementById('app-nav').classList.remove('hidden');
+          initUI();
+        })
+        .catch(function(err) {
+          crash("網路通訊失敗或伺服器超時：\n" + err.message + "\n\n請確認 GAS_API_URL 設定是否正確，且 GAS 已部署為「任何人可存取」。");
+        });
+    }
+
+    // Enter 鍵觸發登入
+    document.addEventListener("DOMContentLoaded", function() {
+      var pwdEl = document.getElementById('login-password');
+      var emailEl = document.getElementById('login-email');
+      if (pwdEl)   pwdEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+      if (emailEl) emailEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') { var p = document.getElementById('login-password'); if(p) p.focus(); } });
+      try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    });
+
+    function initUI() {
+      var u = window.appData.user;
+      document.getElementById('header-user-name').innerText = u.name + ' | ' + u.storeRole;
+      document.getElementById('header-user-email').innerText = u.email;
+      var storeEl = document.getElementById('header-user-store');
+      if(storeEl) storeEl.innerText = u.storeName ? u.storeName : '未指定門市';
+
+      safeAddListener('video-search-input', 'input', function(e) { window.searchQuery = e.target.value.trim().toLowerCase(); if (window.searchQuery.length > 0) { window.currentCategory = 'ALL'; window.currentSubCategory = 'ALL'; if(window.isFavoriteView) toggleFavoriteView(true); renderCategories(); } renderVideos(); });
+      safeAddListener('progress-search-input', 'input', function(e) { window.progressSearchQuery = e.target.value.trim().toLowerCase(); window.progressCurrentPage = 1; renderProgressList(); });
+      safeAddListener('progress-filter-status', 'change', function(e) { window.progressFilterStatus = e.target.value; window.progressCurrentPage = 1; renderProgressList(); });
+      safeAddListener('progress-items-per-page', 'change', function(e) { window.progressItemsPerPage = e.target.value; window.progressCurrentPage = 1; renderProgressList(); });
+      safeAddListener('admin-search-input', 'input', function(e) { window.adminSearchQuery = e.target.value.trim().toLowerCase(); window.adminCurrentPage = 1; renderAdminVideoList(); });
+      safeAddListener('admin-filter-category', 'change', function(e) { window.adminCategory = e.target.value; window.adminSubCategory = 'ALL'; window.adminCurrentPage = 1; updateAdminFilterSubCategoryOptions(); renderAdminVideoList(); });
+      safeAddListener('admin-filter-subcategory', 'change', function(e) { window.adminSubCategory = e.target.value; window.adminCurrentPage = 1; renderAdminVideoList(); });
+      safeAddListener('admin-items-per-page', 'change', function(e) { window.adminItemsPerPage = e.target.value; window.adminCurrentPage = 1; renderAdminVideoList(); });
+      safeAddListener('admin-user-search-input', 'input', function(e) { window.adminUserSearchQuery = e.target.value.trim().toLowerCase(); window.adminUserCurrentPage = 1; renderAdminUserList(); });
+      safeAddListener('admin-user-items-per-page', 'change', function(e) { window.adminUserItemsPerPage = e.target.value; window.adminUserCurrentPage = 1; renderAdminUserList(); });
+      safeAddListener('admin-playlist-search-input', 'input', function(e) { window.adminPlaylistSearchQuery = e.target.value.trim().toLowerCase(); window.adminPlaylistCurrentPage = 1; renderAdminPlaylistList(); });
+      safeAddListener('admin-playlist-items-per-page', 'change', function(e) { window.adminPlaylistItemsPerPage = e.target.value; window.adminPlaylistCurrentPage = 1; renderAdminPlaylistList(); });
+
+      renderCategories(); renderVideos();
+      try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
+
+    function formatTime(seconds) {
+      if (!seconds || isNaN(seconds)) return "00:00";
+      var m = Math.floor(seconds / 60); var s = Math.floor(seconds % 60);
+      return (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
+    }
+
+    function getUserRequiredVideoIds() {
+      var userLevel = (window.appData.user && window.appData.user.level) ? window.appData.user.level : 'L0';
+      var levelMap = { 'L0': ['L0'], 'L1': ['L1', 'L0'], 'L2': ['L2', 'L1', 'L0'], 'L3': ['L3', 'L2', 'L1', 'L0'], 'TT': ['TT', 'L3', 'L2', 'L1', 'L0'] };
+      var allowedLevels = levelMap[userLevel] || ['L0'];
+      var reqIds = {};
+      
+      for (var i = 0; i < window.appData.playlists.length; i++) {
+        var p = window.appData.playlists[i];
+        if (p.isRequired === '是' && allowedLevels.indexOf(p.targetLevel) !== -1 && p.videoList) {
+          var vids = p.videoList.split(',');
+          for (var j = 0; j < vids.length; j++) {
+             if(vids[j].trim() !== '') reqIds[vids[j].trim()] = p.targetLevel;
+          }
+        }
+      }
+      return reqIds;
+    }
+
+    function getRequiredLevelForCurrentUser(videoId) {
+      var reqIds = getUserRequiredVideoIds();
+      return reqIds[videoId] || null;
+    }
+
+    function extractYoutubeId(url) {
+      if(!url) return '';
+      var match = String(url).match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+      return (match && match[2].length === 11) ? match[2] : null;
+    }
+
+    // ==========================================
+    //  前台邏輯 (Home View)
+    // ==========================================
+    function toggleFavoriteView(forceDisable) {
+      window.isFavoriteView = (forceDisable === true) ? false : !window.isFavoriteView;
+      var btn = document.getElementById('btn-favorite-view'); var icon = document.getElementById('icon-favorite-view');
+      if (window.isFavoriteView) {
+        btn.className = "flex items-center justify-center space-x-1.5 px-4 py-3.5 border rounded-2xl shadow-sm transition-colors shrink-0 font-medium text-sm bg-red-50 border-red-200 text-red-600";
+        icon.className = "w-5 h-5 transition-colors fill-red-500 text-red-500";
+        var searchInput = document.getElementById('video-search-input');
+        if (searchInput) searchInput.value = '';
+        window.searchQuery = ''; window.currentCategory = 'ALL'; window.currentSubCategory = 'ALL';
+      } else {
+        btn.className = "flex items-center justify-center space-x-1.5 px-4 py-3.5 border rounded-2xl shadow-sm transition-colors shrink-0 font-medium text-sm bg-appleCard text-appleDarkText border-appleBorder";
+        icon.className = "w-5 h-5 transition-colors text-appleGrayText";
+      }
+      if(forceDisable !== true) { renderCategories(); renderVideos(); }
+    }
+
+    function renderCategories() {
+      var container = document.getElementById('category-tabs'); 
+      var cats = ['ALL'].concat(window.appData.categories); 
+      var catsHtml = [];
+      for (var i=0; i<cats.length; i++) {
+        var cat = cats[i]; 
+        var isActive = (cat === window.currentCategory && !window.isFavoriteView);
+        var cls = isActive ? "bg-appleDarkText text-white shadow-sm shadow-appleDarkText/20" : "bg-appleCard text-appleDarkText border border-appleBorder hover:bg-appleBorder/50";
+        catsHtml.push('<button type="button" onclick="setCategory(\'' + cat + '\')" class="px-5 py-2 rounded-full text-sm font-semibold transition-all shrink-0 ' + cls + '">' + cat + '</button>');
+      }
+      container.innerHTML = catsHtml.join('');
+      
+      var subContainer = document.getElementById('subcategory-tabs'); 
+      var validSubCats = [];
+      for(var k=0; k<window.appData.subCategories.length; k++){ if(window.appData.subCategories[k].parent === window.currentCategory) validSubCats.push(window.appData.subCategories[k]); }
+      
+      if (window.currentCategory !== 'ALL' && validSubCats.length > 0 && !window.isFavoriteView) {
+        subContainer.classList.remove('hidden'); 
+        var subHtml = []; var subCats = ['ALL'];
+        for(var m=0; m<validSubCats.length; m++) subCats.push(validSubCats[m].name);
+        for (var j=0; j<subCats.length; j++) {
+          var subCat = subCats[j]; var isSubActive = (subCat === window.currentSubCategory);
+          var subCls = isSubActive ? "bg-appleBlue text-white shadow-sm shadow-appleBlue/20" : "bg-appleCard text-appleGrayText border border-appleBorder hover:bg-appleBorder/50";
+          subHtml.push('<button type="button" onclick="setSubCategory(\'' + subCat + '\')" class="px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ' + subCls + '">' + subCat + '</button>');
+        }
+        subContainer.innerHTML = subHtml.join('');
+      } else { 
+        subContainer.classList.add('hidden'); subContainer.innerHTML = ''; 
+      }
+    }
+
+    function setCategory(catName) { window.currentCategory = catName; window.currentSubCategory = 'ALL'; if (window.isFavoriteView) toggleFavoriteView(true); var searchInput = document.getElementById('video-search-input'); if (searchInput && searchInput.value !== '') { searchInput.value = ''; window.searchQuery = ''; } renderCategories(); renderVideos(); }
+    function setSubCategory(subCatName) { window.currentSubCategory = subCatName; renderCategories(); renderVideos(); }
+
+    function renderVideos() {
+      var container = document.getElementById('video-grid'); var filtered = [];
+      var userRole = (window.appData.user && window.appData.user.storeRole) ? window.appData.user.storeRole : '';
+      for(var f=0; f<window.appData.videos.length; f++){
+        var v = window.appData.videos[f];
+        if (!v.allowedRoles || v.allowedRoles.trim() === '') { filtered.push(v); } else {
+          var allowedArray = v.allowedRoles.split(','); var roleMatched = false;
+          for(var r=0; r<allowedArray.length; r++) { if(allowedArray[r].trim() === userRole) roleMatched = true; }
+          if(roleMatched) filtered.push(v);
+        }
+      }
+      
+      var finalFiltered = [];
+      if (window.isFavoriteView) { for(var i=0; i<filtered.length; i++) { if (window.appData.favorites.indexOf(filtered[i].id) !== -1) finalFiltered.push(filtered[i]); }
+      } else if (window.searchQuery) { for(var i=0; i<filtered.length; i++) { if (filtered[i].title.toLowerCase().indexOf(window.searchQuery) !== -1) finalFiltered.push(filtered[i]); }
+      } else {
+        if (window.currentCategory !== 'ALL') {
+          for(var i=0; i<filtered.length; i++) { if (filtered[i].category === window.currentCategory) { if (window.currentSubCategory === 'ALL' || filtered[i].subCategory === window.currentSubCategory) { finalFiltered.push(filtered[i]); } } }
+        } else { finalFiltered = filtered; }
+      }
+      
+      var activeVideos = []; for(var i=0; i<finalFiltered.length; i++) { if(finalFiltered[i].status === "上架") activeVideos.push(finalFiltered[i]); }
+      if (activeVideos.length === 0) {
+        var emptyMessage = window.isFavoriteView ? '您目前尚未收藏任何影片' : (window.searchQuery ? '找不到相關影片' : '此分類尚無影片');
+        var iconName = window.isFavoriteView ? 'heart-off' : 'video-off';
+        var emptyArr = [];
+        emptyArr.push('<div class="py-16 text-center space-y-3 bg-appleCard border border-appleBorder rounded-2xl p-8 shadow-sm">');
+        emptyArr.push('  <i data-lucide="' + iconName + '" class="w-12 h-12 text-appleGrayText mx-auto"></i>');
+        emptyArr.push('  <p class="text-appleGrayText text-sm font-semibold">' + emptyMessage + '</p>');
+        emptyArr.push('</div>');
+        container.innerHTML = emptyArr.join('');
+        try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){} return;
+      }
+      
+      var groupedVideos = {};
+      for(var i=0; i<activeVideos.length; i++) {
+        var video = activeVideos[i]; var groupTitle = '其他分類';
+        if (window.isFavoriteView) groupTitle = '我的收藏';
+        else if (window.searchQuery) groupTitle = '搜尋結果：' + window.searchQuery;
+        else if (window.currentCategory === 'ALL') groupTitle = video.category || '未分類';
+        else groupTitle = window.currentCategory + ' >> ' + window.currentSubCategory;
+        if (!groupedVideos[groupTitle]) groupedVideos[groupTitle] = []; groupedVideos[groupTitle].push(video);
+      }
+      
+      var buildGroupHtml = function(catName, videos) {
+        if (!videos || videos.length === 0) return '';
+        var cardsArr = [];
+        for(var i=0; i<videos.length; i++) {
+          var video = videos[i]; var ytId = extractYoutubeId(video.url);
+          var imgTag = ytId ? '<img src="https://img.youtube.com/vi/' + ytId + '/maxresdefault.jpg" onerror="this.src=\'https://img.youtube.com/vi/' + ytId + '/mqdefault.jpg\'" class="w-full h-full object-cover group-hover:scale-105 duration-500">' : '<div class="w-full h-full bg-gray-200"></div>';
+          var isFav = window.appData.favorites.indexOf(video.id) !== -1;
+          var subCatLabel = video.subCategory ? ' <span class="text-[8px] opacity-60 ml-1">· ' + video.subCategory + '</span>' : '';
+          var favIcon = isFav ? '<div class="absolute top-2 right-2 bg-black/40 blur-backdrop rounded-full p-1.5"><i data-lucide="heart" class="w-3.5 h-3.5 text-red-500 fill-red-500"></i></div>' : '';
+          var reqLevel = getRequiredLevelForCurrentUser(video.id);
+          var reqBadgeHtml = reqLevel ? '<div class="absolute top-2.5 left-2.5 bg-appleDanger/90 blur-backdrop text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm flex items-center space-x-1 z-10"><i data-lucide="bookmark-check" class="w-3 h-3"></i><span>' + reqLevel + ' 必修</span></div>' : '';
+          
+          cardsArr.push('<div onclick="openVideoPlayer(\'' + video.id + '\')" class="bg-appleCard border border-appleBorder rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] transition-all cursor-pointer flex flex-col justify-between group">');
+          cardsArr.push('  <div>');
+          cardsArr.push('    <div class="aspect-video w-full bg-appleDarkText relative overflow-hidden">');
+          cardsArr.push('      ' + reqBadgeHtml);
+          cardsArr.push('      ' + imgTag);
+          cardsArr.push('      <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">');
+          cardsArr.push('        <div class="w-12 h-12 rounded-full bg-white/90 blur-backdrop flex items-center justify-center text-appleBlue shadow-lg transform scale-90 group-hover:scale-100 transition-all">');
+          cardsArr.push('          <i data-lucide="play" class="w-5 h-5 fill-current ml-0.5"></i>');
+          cardsArr.push('        </div>');
+          cardsArr.push('      </div>');
+          cardsArr.push('      ' + favIcon);
+          cardsArr.push('    </div>');
+          cardsArr.push('    <div class="p-5 space-y-2.5">');
+          cardsArr.push('      <div class="flex items-center">');
+          cardsArr.push('        <span class="text-[10px] tracking-wider uppercase font-extrabold text-appleGrayText">' + video.category + subCatLabel + '</span>');
+          cardsArr.push('      </div>');
+          cardsArr.push('      <h3 class="text-base font-bold line-clamp-2 leading-snug group-hover:text-appleBlue transition-colors">' + video.title + '</h3>');
+          cardsArr.push('    </div>');
+          cardsArr.push('  </div>');
+          cardsArr.push('</div>');
+        }
+        var displayTitleHtml = catName; var iconHtml = '<i data-lucide="layers" class="w-5 h-5 text-appleBlue mr-2 shrink-0"></i>';
+        if (catName === '我的收藏') { iconHtml = '<i data-lucide="heart" class="w-5 h-5 text-red-500 fill-red-500 mr-2 shrink-0"></i>'; displayTitleHtml = '我的收藏'; } 
+        else if (catName.indexOf('搜尋結果：') === 0) { iconHtml = '<i data-lucide="search" class="w-5 h-5 text-appleBlue mr-2 shrink-0"></i>'; displayTitleHtml = '搜尋結果 <i data-lucide="chevron-right" class="w-4 h-4 mx-1.5 text-appleGrayText shrink-0"></i> <span class="text-appleBlue truncate max-w-[150px] sm:max-w-xs">' + catName.substring(5) + '</span>'; } 
+        else if (catName.indexOf(' >> ') !== -1) { var parts = catName.split(' >> '); displayTitleHtml = parts[0] + ' <i data-lucide="chevron-right" class="w-4 h-4 mx-1.5 text-appleGrayText shrink-0"></i> <span class="text-appleGrayText font-bold text-lg truncate max-w-[150px] sm:max-w-xs">' + parts[1] + '</span>'; }
+        
+        var groupArr = [];
+        groupArr.push('<div class="space-y-4">');
+        groupArr.push('  <div class="flex items-center pl-2">');
+        groupArr.push('    ' + iconHtml);
+        groupArr.push('    <h2 class="text-xl font-extrabold text-appleDarkText tracking-tight flex items-center">' + displayTitleHtml + '</h2>');
+        groupArr.push('  </div>');
+        groupArr.push('  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">' + cardsArr.join('') + '</div>');
+        groupArr.push('</div>');
+        return groupArr.join('');
+      };
+      
+      var finalHtmlArr = []; var groupKeys = Object.keys(groupedVideos); var knownCategories = window.appData.categories;
+      groupKeys.sort(function(a, b) { var idxA = knownCategories.indexOf(a), idxB = knownCategories.indexOf(b); if (idxA !== -1 && idxB !== -1) return idxA - idxB; if (idxA !== -1) return -1; if (idxB !== -1) return 1; var subA = null, subB = null; for(var i=0; i<window.appData.subCategories.length; i++){ if(window.appData.subCategories[i].name === a) subA = window.appData.subCategories[i]; if(window.appData.subCategories[i].name === b) subB = window.appData.subCategories[i]; } if (subA && subB) return subA.order - subB.order; if (subA) return -1; if (subB) return 1; return 0; });
+      for(var i=0; i<groupKeys.length; i++) { finalHtmlArr.push(buildGroupHtml(groupKeys[i], groupedVideos[groupKeys[i]])); }
+      container.innerHTML = finalHtmlArr.join(''); try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
+
+    // ==========================================
+    //  播放器與觀看進度引擎
+    // ==========================================
+    function openVideoPlayer(videoId) {
+      var video = null;
+      for(var i=0; i<window.appData.videos.length; i++){ if(window.appData.videos[i].id === videoId) video = window.appData.videos[i]; }
+      if (!video) return;
+      var ytId = extractYoutubeId(video.url);
+      if (!ytId) return alert("這支影片的網址不正確，無法播放");
+
+      window.activeModalVideoId = videoId;
+      var reqLevel = getRequiredLevelForCurrentUser(videoId);
+      var reqTag = reqLevel ? '<span class="bg-appleDanger text-white text-xs px-2 py-1 rounded-md mr-2.5 font-black align-middle shadow-sm shrink-0 flex items-center"><i data-lucide="bookmark-check" class="w-3.5 h-3.5 mr-1"></i>' + reqLevel + ' 必修</span>' : '';
+      document.getElementById('modal-video-title').innerHTML = reqTag + '<span class="truncate">' + video.title + '</span>';
+      try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+      updateModalHeartUI(videoId);
+      
+      currentSession = { videoId: videoId, duration: 0, maxReachedTime: 0, isCompleted: false, totalDuration: 0 };
+
+      var modal = document.getElementById('video-modal');
+      modal.classList.remove('hidden'); setTimeout(function() { modal.classList.remove('opacity-0'); }, 10);
+
+      if (!window.isYtApiReady) { setTimeout(function() { if (window.activeModalVideoId === videoId) openVideoPlayer(videoId); }, 500); return; }
+
+      if (!ytPlayer) {
+        ytPlayer = new YT.Player('yt-player', { videoId: ytId, playerVars: { 'autoplay': 1, 'playsinline': 1, 'rel': 0 }, events: { 'onStateChange': onPlayerStateChange } });
+      } else {
+        ytPlayer.loadVideoById(ytId);
+      }
+    }
+
+    function onPlayerStateChange(event) { if (event.data === YT.PlayerState.PLAYING) startWatchTimer(); else stopWatchTimer(); }
+    function startWatchTimer() {
+      if (watchTimer) clearInterval(watchTimer);
+      watchTimer = setInterval(function() {
+        currentSession.duration++;
+        if (ytPlayer && typeof ytPlayer.getDuration === 'function' && typeof ytPlayer.getCurrentTime === 'function') {
+          var duration = ytPlayer.getDuration(); var currTime = Math.floor(ytPlayer.getCurrentTime());
+          if (currTime > currentSession.maxReachedTime) { currentSession.maxReachedTime = currTime; }
+          if (duration > 0 && (currentSession.maxReachedTime / duration) >= 0.8) currentSession.isCompleted = true;
+        }
+      }, 1000);
+    }
+    function stopWatchTimer() { if (watchTimer) { clearInterval(watchTimer); watchTimer = null; } }
+
+    function closeVideoPlayer() {
+      window.activeModalVideoId = null; 
+      var modal = document.getElementById('video-modal');
+      modal.classList.add('opacity-0'); setTimeout(function() { modal.classList.add('hidden'); }, 300);
+      stopWatchTimer(); 
+      
+      var totalDur = 0;
+      if (ytPlayer && typeof ytPlayer.getDuration === 'function') { totalDur = ytPlayer.getDuration() || 0; }
+      currentSession.totalDuration = Math.floor(totalDur);
+
+      if (ytPlayer && typeof ytPlayer.stopVideo === 'function') ytPlayer.stopVideo();
+
+      if (currentSession.duration > 0) {
+        var existingLog = null;
+        for(var i=0; i<window.appData.watchLogs.length; i++) {
+           if(window.appData.watchLogs[i].videoId === currentSession.videoId) { existingLog = window.appData.watchLogs[i]; break; }
+        }
+        var newIsComp = currentSession.isCompleted ? '是' : '否';
+        var timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        
+        if(existingLog) {
+            existingLog.viewCount = parseInt(existingLog.viewCount || 0) + 1;
+            existingLog.watchDuration = parseInt(existingLog.watchDuration || 0) + currentSession.duration;
+            existingLog.totalDuration = Math.max(parseInt(existingLog.totalDuration || 0), currentSession.totalDuration);
+            existingLog.maxReachedTime = Math.max(parseFloat(existingLog.maxReachedTime) || 0, currentSession.maxReachedTime);
+            if (existingLog.isCompleted !== '是' && currentSession.isCompleted) existingLog.isCompleted = '是';
+            existingLog.lastWatchedAt = timestamp;
+        } else {
+            existingLog = {
+                videoId: currentSession.videoId, viewCount: 1, 
+                watchDuration: currentSession.duration, totalDuration: currentSession.totalDuration,
+                maxReachedTime: currentSession.maxReachedTime,
+                isCompleted: newIsComp, lastWatchedAt: timestamp
+            };
+            window.appData.watchLogs.push(existingLog);
+        }
+
+        // 🚀 [樂觀 UI 渲染] 即時更新全域事件快取，確保點擊率與學員排行榜立即更新
+        window.appData.watchEvents.push({
+           eventId: 'E_TEMP_' + Date.now(),
+           email: window.appData.user.email,
+           videoId: currentSession.videoId,
+           duration: currentSession.duration,
+           createdAt: timestamp
+        });
+        
+        if (document.getElementById('section-progress').classList.contains('hidden') === false) { renderProgressList(); }
+        callAPI('saveWatchLog', { sessionData: currentSession }).catch(function(err) { console.error("紀錄失敗", err); });
+      }
+    }
+
+    function updateModalHeartUI(videoId) {
+      var isFav = window.appData.favorites.indexOf(videoId) !== -1;
+      var icon = document.getElementById('modal-fav-icon');
+      if (isFav) { icon.classList.add('fill-red-500', 'text-red-500'); icon.classList.remove('text-white'); } 
+      else { icon.classList.remove('fill-red-500', 'text-red-500'); icon.classList.add('text-white'); }
+    }
+
+    function toggleModalFavorite() {
+      var videoId = currentSession.videoId; if(!videoId) return;
+      var idx = window.appData.favorites.indexOf(videoId); var newFavStatus = !(idx > -1);
+      
+      if (newFavStatus) window.appData.favorites.push(videoId); else window.appData.favorites.splice(idx, 1);
+      updateModalHeartUI(videoId); 
+      
+      renderVideos(); 
+      if (document.getElementById('section-progress').classList.contains('hidden') === false) renderProgressList(); 
+      
+      callAPI('toggleFavorite', { videoId: videoId, isFav: newFavStatus })
+        .then(function(res) { if (res && res.status === 'error') console.error("後端收藏處理失敗:", res.message); })
+        .catch(function(err) { console.error("網路通訊失敗 (Favorites):", err); });
+    }
+
+    // ==========================================
+    //  導覽切換與進度頁面
+    // ==========================================
+    function switchTab(tabId) {
+      var tabs = ['home', 'progress', 'admin'];
+      for(var i=0; i<tabs.length; i++) {
+        var btn = document.getElementById('tab-' + tabs[i]); var sec = document.getElementById('section-' + tabs[i]);
+        if(btn) { btn.classList.remove('text-appleBlue'); btn.classList.add('text-appleGrayText'); }
+        if(sec) sec.classList.add('hidden');
+      }
+      var activeBtn = document.getElementById('tab-' + tabId); var activeSec = document.getElementById('section-' + tabId);
+      if(activeBtn) activeBtn.classList.add('text-appleBlue'); if(activeSec) activeSec.classList.remove('hidden');
+
+      if (tabId === 'admin') { 
+        initAdminFilters(); 
+        renderAdminDashboard(); 
+        renderAdminVideoList(); renderAdminUserList(); renderAdminPlaylistList(); 
+      }
+      if (tabId === 'progress') { renderProgressList(); }
+    }
+
+    function switchProgressTab(tabName) {
+      window.progressTab = tabName; window.progressCurrentPage = 1;
+      var tabs = ['dashboard', 'required', 'overview', 'favorites'];
+      
+      for(var i = 0; i < tabs.length; i++) {
+        var btn = document.getElementById('progress-tab-' + tabs[i]);
+        if (!btn) continue;
+        if (tabs[i] === tabName) {
+          btn.className = "flex-1 md:flex-none px-4 md:px-6 py-1.5 rounded-lg text-sm font-bold bg-white shadow-sm text-appleDarkText transition-all whitespace-nowrap";
+        } else {
+          btn.className = "flex-1 md:flex-none px-4 md:px-6 py-1.5 rounded-lg text-sm font-bold text-appleGrayText hover:text-appleDarkText hover:bg-appleBorder/40 transition-all whitespace-nowrap";
+        }
+      }
+      
+      var dashView = document.getElementById('progress-dashboard-view');
+      var reqView = document.getElementById('progress-required-view');
+      var stdView = document.getElementById('progress-standard-view');
+      var searchBar = document.getElementById('progress-search-bar');
+      
+      if (tabName === 'dashboard') {
+        if(dashView) dashView.classList.remove('hidden');
+        if(reqView) reqView.classList.add('hidden');
+        if(stdView) stdView.classList.add('hidden');
+        if(searchBar) searchBar.classList.add('hidden');
+      } else if (tabName === 'required') {
+        if(dashView) dashView.classList.add('hidden');
+        if(reqView) reqView.classList.remove('hidden');
+        if(stdView) stdView.classList.add('hidden');
+        if(searchBar) searchBar.classList.remove('hidden');
+      } else {
+        if(dashView) dashView.classList.add('hidden');
+        if(reqView) reqView.classList.add('hidden');
+        if(stdView) stdView.classList.remove('hidden');
+        if(searchBar) searchBar.classList.remove('hidden');
+      }
+      
+      renderProgressList();
+    }
+
+    function changeProgressPage(delta) { window.progressCurrentPage += delta; renderProgressList(); }
+    
+    function togglePlaylistAccordion(playlistId) {
+      window.expandedPlaylists[playlistId] = !window.expandedPlaylists[playlistId];
+      renderRequiredProgressList();
+    }
+
+    function generateRingSvgHtml(percentage, trackColorClass, progressColorClass) {
+      var radius = 38;
+      var circumference = 2 * Math.PI * radius;
+      var offset = circumference - (percentage / 100) * circumference;
+      
+      var arr = [];
+      arr.push('<div class="relative w-28 h-28 shrink-0 flex items-center justify-center">');
+      arr.push('  <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">');
+      arr.push('    <circle cx="50" cy="50" r="' + radius + '" fill="transparent" stroke-width="8" class="' + trackColorClass + '"></circle>');
+      arr.push('    <circle cx="50" cy="50" r="' + radius + '" fill="transparent" stroke-width="8" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + offset + '" stroke-linecap="round" class="' + progressColorClass + ' transition-all duration-1000 ease-out"></circle>');
+      arr.push('  </svg>');
+      arr.push('  <div class="absolute inset-0 flex flex-col items-center justify-center">');
+      arr.push('    <span class="text-2xl font-black text-appleDarkText tracking-tighter">' + percentage + '<span class="text-sm font-bold text-appleGrayText ml-0.5">%</span></span>');
+      arr.push('  </div>');
+      arr.push('</div>');
+      return arr.join('');
+    }
+
+    function renderProgressList() {
+      if (window.progressTab === 'dashboard') {
+        renderDashboardList();
+      } else if (window.progressTab === 'required') {
+        renderRequiredProgressList();
+      } else {
+        renderStandardProgressList();
+      }
+    }
+
+    function renderDashboardList() {
+      var container = document.getElementById('progress-dashboard-view');
+      
+      var activeVideos = []; 
+      for(var i=0; i<window.appData.videos.length; i++) { if(window.appData.videos[i].status === '上架') activeVideos.push(window.appData.videos[i]); }
+      
+      var reqIds = getUserRequiredVideoIds();
+      var favIds = window.appData.favorites;
+      
+      var dataAll = { total: activeVideos.length, completed: 0, pending: 0, watchSecs: 0 };
+      var dataReq = { total: 0, completed: 0, pending: 0, watchSecs: 0 };
+      var dataFav = { total: 0, completed: 0, pending: 0, watchSecs: 0 };
+      
+      for(var i=0; i<activeVideos.length; i++) {
+        if(reqIds[activeVideos[i].id]) dataReq.total++;
+        if(favIds.indexOf(activeVideos[i].id) !== -1) dataFav.total++;
+      }
+      
+      var logMap = {}; 
+      var recent7Days = {}; 
+      var today = new Date();
+      for(var i=0; i<7; i++) {
+         var d = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+         var dStr = d.getFullYear() + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0');
+         recent7Days[dStr] = { dateStr: dStr, min: 0, dateObj: d };
+      }
+
+      var subCatStats = {}; 
+      var sortedLogs = []; 
+      
+      for(var i=0; i<window.appData.watchLogs.length; i++) {
+        var log = window.appData.watchLogs[i];
+        logMap[log.videoId] = log;
+        sortedLogs.push(log);
+        
+        var v = null; for(var j=0; j<activeVideos.length; j++) { if(activeVideos[j].id === log.videoId) { v = activeVideos[j]; break; } }
+        if(!v) continue; 
+        
+        var isComp = (log.isCompleted === '是');
+        var secs = parseInt(log.watchDuration || 0, 10);
+        var minsForChart = Math.floor(secs / 60); 
+        
+        if(isComp) dataAll.completed++;
+        dataAll.watchSecs += secs;
+        
+        if(reqIds[v.id]) {
+          if(isComp) dataReq.completed++;
+          dataReq.watchSecs += secs;
+        }
+        
+        if(favIds.indexOf(v.id) !== -1) {
+          if(isComp) dataFav.completed++;
+          dataFav.watchSecs += secs;
+        }
+
+        if (v.subCategory) {
+           if(!subCatStats[v.subCategory]) subCatStats[v.subCategory] = 0;
+           subCatStats[v.subCategory] += (log.viewCount || 0);
+        }
+
+        if (log.lastWatchedAt) {
+           var cleanDateStr = log.lastWatchedAt.split(' ')[0].replace(/-/g, '/'); 
+           if(recent7Days[cleanDateStr]) {
+              recent7Days[cleanDateStr].min += minsForChart;
+           }
+        }
+      }
+      
+      dataAll.pending = dataAll.total - dataAll.completed; if(dataAll.pending < 0) dataAll.pending = 0;
+      dataReq.pending = dataReq.total - dataReq.completed; if(dataReq.pending < 0) dataReq.pending = 0;
+      dataFav.pending = dataFav.total - dataFav.completed; if(dataFav.pending < 0) dataFav.pending = 0;
+
+      var pctAll = dataAll.total > 0 ? Math.round((dataAll.completed / dataAll.total) * 100) : 0;
+      var pctReq = dataReq.total > 0 ? Math.round((dataReq.completed / dataReq.total) * 100) : 0;
+      var pctFav = dataFav.total > 0 ? Math.round((dataFav.completed / dataFav.total) * 100) : 0;
+
+      var arr = [];
+      var createCard = function(title, icon, iconColor, ringPct, ringTrackColor, ringColor, data) {
+        var displayMins = Math.floor(data.watchSecs / 60);
+        var displaySecs = data.watchSecs % 60;
+
+        var a = [];
+        a.push('<div class="bg-appleCard border border-appleBorder rounded-2xl shadow-sm p-5 md:p-6 flex flex-col md:flex-row items-center gap-6">');
+        
+        a.push('  <div class="flex flex-col items-center shrink-0">');
+        a.push('    <div class="flex items-center space-x-2 mb-3"><i data-lucide="' + icon + '" class="w-5 h-5 ' + iconColor + '"></i><h3 class="text-base font-bold text-appleDarkText">' + title + '</h3></div>');
+        a.push(generateRingSvgHtml(ringPct, ringTrackColor, ringColor));
+        a.push('  </div>');
+        
+        a.push('  <div class="flex-grow w-full border-t md:border-t-0 md:border-l border-appleBorder/60 pt-4 md:pt-0 md:pl-8 grid grid-cols-2 gap-y-4 gap-x-2">');
+        a.push('    <div class="flex flex-col items-center text-center"><span class="text-[11px] font-bold text-appleGrayText uppercase tracking-wider mb-1">所有影片</span><span class="text-xl font-bold text-appleDarkText font-mono">' + data.total + ' <span class="text-xs font-normal text-appleGrayText">部</span></span></div>');
+        a.push('    <div class="flex flex-col items-center text-center"><span class="text-[11px] font-bold text-appleGrayText uppercase tracking-wider mb-1">已完成</span><span class="text-xl font-bold text-appleDarkText font-mono">' + data.completed + ' <span class="text-xs font-normal text-appleGrayText">部</span></span></div>');
+        a.push('    <div class="flex flex-col items-center text-center"><span class="text-[11px] font-bold text-appleGrayText uppercase tracking-wider mb-1">待完成</span><span class="text-xl font-bold text-appleDanger font-mono">' + data.pending + ' <span class="text-xs font-normal text-appleGrayText">部</span></span></div>');
+        a.push('    <div class="flex flex-col items-center text-center"><span class="text-[11px] font-bold text-appleGrayText uppercase tracking-wider mb-1">累計觀看</span><div><span class="text-xl font-bold text-appleBlue font-mono">' + displayMins + '</span><span class="text-xs font-normal text-appleGrayText mx-0.5">分</span><span class="text-xl font-bold text-appleBlue font-mono">' + displaySecs + '</span><span class="text-xs font-normal text-appleGrayText ml-0.5">秒</span></div></div>');
+        a.push('  </div>');
+
+        a.push('</div>');
+        return a.join('');
+      };
+
+      arr.push('<div class="grid grid-cols-1 gap-5">');
+      arr.push(createCard('總覽區段', 'pie-chart', 'text-appleBlue', pctAll, 'stroke-blue-50', 'stroke-appleBlue', dataAll));
+      arr.push(createCard('必修區段', 'bookmark-check', 'text-orange-500', pctReq, 'stroke-orange-50', 'stroke-orange-500', dataReq));
+      arr.push(createCard('收藏區段', 'heart', 'text-pink-500', pctFav, 'stroke-pink-50', 'stroke-pink-500', dataFav));
+      arr.push('</div>');
+
+      arr.push('<div class="mt-8">');
+      arr.push('  <div class="flex items-center space-x-2 mb-5 pl-2"><i data-lucide="activity" class="w-5 h-5 text-appleDarkText"></i><h2 class="text-lg font-bold text-appleDarkText">學習歷程洞察 Analytics</h2></div>');
+      arr.push('  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">');
+
+      var subCatArr = []; 
+      for(var key in subCatStats) subCatArr.push({ name: key, views: subCatStats[key] });
+      subCatArr.sort(function(a,b){ return b.views - a.views; });
+      var maxCatViews = subCatArr.length > 0 ? subCatArr[0].views : 0;
+      
+      arr.push('    <div class="bg-appleCard border border-appleBorder rounded-2xl shadow-sm p-5 flex flex-col">');
+      arr.push('      <h3 class="text-sm font-bold text-appleGrayText mb-4">產品線熱度分佈 (依觀看數)</h3>');
+      arr.push('      <div class="space-y-3 flex-grow">');
+      if(subCatArr.length === 0) {
+        arr.push('        <div class="h-full flex items-center justify-center text-xs text-appleGrayText">無產品分類觀看紀錄</div>');
+      } else {
+        var limit = Math.min(subCatArr.length, 5);
+        for(var i=0; i<limit; i++) {
+           var wPct = maxCatViews > 0 ? Math.round((subCatArr[i].views / maxCatViews) * 100) : 0;
+           if(wPct < 5) wPct = 5; 
+           arr.push('        <div>');
+           arr.push('          <div class="flex justify-between text-xs mb-1.5"><span class="font-bold text-appleDarkText truncate mr-2">' + subCatArr[i].name + '</span><span class="text-appleGrayText font-mono">' + subCatArr[i].views + ' 次</span></div>');
+           arr.push('          <div class="w-full bg-appleBorder rounded-full h-2 overflow-hidden">');
+           arr.push('            <div class="bg-appleBlue h-full rounded-full transition-all duration-1000" style="width: ' + wPct + '%"></div>');
+           arr.push('          </div>');
+           arr.push('        </div>');
+        }
+      }
+      arr.push('      </div>');
+      arr.push('    </div>');
+
+      var dayKeys = Object.keys(recent7Days).sort(); 
+      var maxMin = 0;
+      for(var i=0; i<dayKeys.length; i++) { if(recent7Days[dayKeys[i]].min > maxMin) maxMin = recent7Days[dayKeys[i]].min; }
+      
+      arr.push('    <div class="bg-appleCard border border-appleBorder rounded-2xl shadow-sm p-5 flex flex-col">');
+      arr.push('      <h3 class="text-sm font-bold text-appleGrayText mb-4">本週學習活躍度 (分鐘)</h3>');
+      arr.push('      <div class="flex items-end justify-between flex-grow h-32 pb-1 gap-2">');
+      var dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+      for(var i=0; i<dayKeys.length; i++) {
+         var item = recent7Days[dayKeys[i]];
+         var hPct = maxMin > 0 ? Math.round((item.min / maxMin) * 100) : 0;
+         var dayName = dayNames[item.dateObj.getDay()];
+         arr.push('        <div class="flex flex-col items-center flex-1 h-full relative group">');
+         if(item.min > 0) {
+            arr.push('          <div class="absolute -top-6 text-[10px] font-mono font-bold text-appleBlue opacity-0 group-hover:opacity-100 transition-opacity">' + item.min + '</div>');
+         }
+         arr.push('          <div class="w-full max-w-[20px] bg-appleBorder rounded-t-sm flex items-end justify-center h-full">');
+         arr.push('            <div class="' + (item.min > 0 ? 'bg-appleGreen' : 'bg-transparent') + ' w-full rounded-t-sm transition-all duration-1000 group-hover:bg-green-400" style="height: ' + hPct + '%"></div>');
+         arr.push('          </div>');
+         arr.push('          <span class="text-[10px] font-bold text-appleGrayText mt-2">' + dayName + '</span>');
+         arr.push('        </div>');
+      }
+      arr.push('      </div>');
+      arr.push('    </div>');
+
+      sortedLogs.sort(function(a,b){ return (b.viewCount || 0) - (a.viewCount || 0); });
+      var topLogs = [];
+      for(var i=0; i<sortedLogs.length; i++) {
+        var log = sortedLogs[i];
+        var vInfo = null; for(var j=0; j<activeVideos.length; j++) { if(activeVideos[j].id === log.videoId) { vInfo = activeVideos[j]; break; } }
+        if(vInfo) topLogs.push({ log: log, video: vInfo });
+        if(topLogs.length >= 3) break;
+      }
+      
+      arr.push('    <div class="bg-appleCard border border-appleBorder rounded-2xl shadow-sm p-5 flex flex-col">');
+      arr.push('      <h3 class="text-sm font-bold text-appleGrayText mb-4">最常重複觀看 (Top 3)</h3>');
+      arr.push('      <div class="space-y-3 flex-grow">');
+      if(topLogs.length === 0) {
+        arr.push('        <div class="h-full flex items-center justify-center text-xs text-appleGrayText">無觀看紀錄</div>');
+      } else {
+        var medals = ['bg-yellow-400', 'bg-gray-300', 'bg-orange-300'];
+        for(var i=0; i<topLogs.length; i++) {
+          var item = topLogs[i];
+          arr.push('        <div class="flex items-center justify-between p-2 rounded-xl hover:bg-appleBg cursor-pointer transition-colors border border-transparent hover:border-appleBorder group" onclick="openVideoPlayer(\'' + item.log.videoId + '\')">');
+          arr.push('          <div class="flex items-center space-x-3 overflow-hidden">');
+          arr.push('            <div class="w-6 h-6 rounded-full ' + medals[i] + ' text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">' + (i+1) + '</div>');
+          arr.push('            <div class="flex flex-col truncate">');
+          arr.push('              <span class="text-sm font-bold text-appleDarkText truncate group-hover:text-appleBlue transition-colors">' + item.video.title + '</span>');
+          arr.push('              <span class="text-[10px] text-appleGrayText">' + (item.video.subCategory || item.video.category) + '</span>');
+          arr.push('            </div>');
+          arr.push('          </div>');
+          arr.push('          <div class="flex items-center shrink-0 ml-2">');
+          arr.push('             <span class="text-xs font-bold text-appleDarkText font-mono bg-appleBorder px-1.5 py-0.5 rounded">' + item.log.viewCount + ' <span class="font-normal text-[10px] text-appleGrayText">次</span></span>');
+          arr.push('          </div>');
+          arr.push('        </div>');
+        }
+      }
+      arr.push('      </div>');
+      arr.push('    </div>');
+
+      arr.push('  </div>');
+      arr.push('</div>');
+
+      container.innerHTML = arr.join('');
+      try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
+
+    function generateProgressRowHtml(wl, v, isFav) {
+      var title = v ? v.title : "未知影片 (" + wl.videoId + ")";
+      var category = v ? v.category : "-";
+      var ytId = v ? extractYoutubeId(v.url) : ''; 
+      var imgUrl = ytId ? 'https://img.youtube.com/vi/' + ytId + '/default.jpg' : 'https://via.placeholder.com/120x68?text=No+Image';
+      var favIconHtml = isFav ? '<div class="absolute top-1 right-1 bg-black/40 blur-backdrop rounded-full p-0.5 shadow-sm"><i data-lucide="heart" class="w-2.5 h-2.5 text-red-500 fill-red-500"></i></div>' : '';
+      
+      var pct = 0;
+      if (wl.totalDuration > 0) { pct = Math.floor((parseFloat(wl.maxReachedTime) || 0) / wl.totalDuration * 100); if (pct > 100) pct = 100; }
+      
+      var statusBadge = wl.isCompleted === '是'
+          ? '<span class="px-2 py-0.5 rounded text-[10px] bg-green-100 text-green-800 font-bold border border-green-200 shadow-sm">已完成</span>'
+          : '<span class="px-2 py-0.5 rounded text-[10px] bg-gray-100 text-gray-600 font-bold border border-gray-200 shadow-sm">未完成</span>';
+      var progressColor = wl.isCompleted === '是' ? 'bg-appleGreen' : 'bg-appleBlue';
+      var subCatDisplay = v && v.subCategory ? ' > ' + v.subCategory : '';
+      var playCue = '<div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"><div class="w-8 h-8 rounded-full bg-white/90 blur-backdrop flex items-center justify-center text-appleBlue shadow-lg transform scale-90 group-hover:scale-100 transition-all"><i data-lucide="play" class="w-4 h-4 fill-current ml-0.5"></i></div></div>';
+
+      var arr = [];
+      arr.push('<tr class="hover:bg-appleBg/50 transition-colors cursor-pointer group" onclick="openVideoPlayer(\'' + wl.videoId + '\')">');
+      arr.push('  <td class="px-5 py-4">');
+      arr.push('    <div class="flex items-center space-x-3">');
+      arr.push('      <div class="w-[88px] h-[50px] bg-gray-200 rounded-md overflow-hidden shrink-0 relative border border-appleBorder shadow-sm">');
+      arr.push('        <img src="' + imgUrl + '" class="w-full h-full object-cover">');
+      arr.push('        ' + playCue);
+      arr.push('        ' + favIconHtml);
+      arr.push('      </div>');
+      arr.push('      <div class="min-w-0 flex-1">');
+      arr.push('        <p class="text-sm font-bold text-appleDarkText truncate group-hover:text-appleBlue transition-colors" title="' + title + '">' + title + '</p>');
+      arr.push('        <p class="text-[10px] text-appleGrayText mt-0.5 truncate">' + category + subCatDisplay + '</p>');
+      arr.push('      </div>');
+      arr.push('    </div>');
+      arr.push('  </td>');
+      arr.push('  <td class="px-5 py-4 text-center">');
+      arr.push('    <div class="flex flex-col items-center">');
+      arr.push('      <span class="text-sm font-bold text-appleDarkText">' + (wl.viewCount || 0) + ' <span class="text-[10px] font-normal text-appleGrayText">次</span></span>');
+      arr.push('      <span class="text-xs text-appleGrayText mt-0.5 font-mono">' + formatTime(wl.watchDuration) + '</span>');
+      arr.push('    </div>');
+      arr.push('  </td>');
+      arr.push('  <td class="px-5 py-4">');
+      arr.push('    <div class="flex flex-col space-y-1.5 w-full max-w-[140px] mx-auto">');
+      arr.push('      <div class="flex justify-between items-center">');
+      arr.push('        ' + statusBadge + '<span class="text-[11px] font-bold text-appleDarkText font-mono">' + pct + '%</span>');
+      arr.push('      </div>');
+      arr.push('      <div class="w-full bg-appleBorder rounded-full h-1.5 overflow-hidden shadow-inner">');
+      arr.push('        <div class="' + progressColor + ' h-1.5 rounded-full transition-all duration-500" style="width: ' + pct + '%"></div>');
+      arr.push('      </div>');
+      arr.push('    </div>');
+      arr.push('  </td>');
+      arr.push('</tr>');
+      return arr.join('');
+    }
+    
+    function renderRequiredProgressList() {
+      var container = document.getElementById('progress-required-view');
+      var userLevel = (window.appData.user && window.appData.user.level) ? window.appData.user.level : 'L0';
+      var levelMap = { 'L0': ['L0'], 'L1': ['L1', 'L0'], 'L2': ['L2', 'L1', 'L0'], 'L3': ['L3', 'L2', 'L1', 'L0'], 'TT': ['TT', 'L3', 'L2', 'L1', 'L0'] };
+      var allowedLevels = levelMap[userLevel] || ['L0'];
+
+      var targetPlaylists = [];
+      for (var i = 0; i < window.appData.playlists.length; i++) {
+        var p = window.appData.playlists[i];
+        if (p.isRequired === '是' && allowedLevels.indexOf(p.targetLevel) !== -1) {
+          targetPlaylists.push(p);
+        }
+      }
+      targetPlaylists.sort(function(a, b) { return a.sortOrder - b.sortOrder; });
+
+      if (targetPlaylists.length === 0) {
+        container.innerHTML = '<div class="py-12 text-center bg-appleCard border border-appleBorder rounded-2xl shadow-sm"><i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50 text-appleGrayText"></i><p class="text-sm font-semibold text-appleGrayText">目前沒有指派給您的必修播放列表。</p></div>';
+        try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+        return;
+      }
+
+      var htmlArr = [];
+      var hasVisiblePlaylists = false;
+
+      for (var i = 0; i < targetPlaylists.length; i++) {
+        var p = targetPlaylists[i];
+        if (!p.videoList) continue;
+        
+        var vids = p.videoList.split(',');
+        var totalVideos = 0;
+        var completedVideos = 0;
+        var filteredRowsHtml = [];
+
+        for (var j = 0; j < vids.length; j++) {
+          var vId = vids[j].trim();
+          if (!vId) continue;
+
+          var vInfo = null;
+          for (var k = 0; k < window.appData.videos.length; k++) {
+            if (window.appData.videos[k].id === vId) { vInfo = window.appData.videos[k]; break; }
+          }
+          if (!vInfo || vInfo.status !== '上架') continue; 
+
+          totalVideos++;
+
+          var wLog = null;
+          for (var k = 0; k < window.appData.watchLogs.length; k++) {
+            if (window.appData.watchLogs[k].videoId === vId) { wLog = window.appData.watchLogs[k]; break; }
+          }
+          if (!wLog) {
+            wLog = { videoId: vId, viewCount: 0, watchDuration: 0, totalDuration: 0, maxReachedTime: 0, isCompleted: '否', lastWatchedAt: '' };
+          }
+          if (wLog.isCompleted === '是') completedVideos++;
+
+          var titleMatch = true;
+          if (window.progressSearchQuery && vInfo.title.toLowerCase().indexOf(window.progressSearchQuery) === -1) titleMatch = false;
+          
+          var statusMatch = true;
+          if (window.progressFilterStatus !== 'ALL') {
+            var expectedStatus = (window.progressFilterStatus === '已完成') ? '是' : '否';
+            if (wLog.isCompleted !== expectedStatus) statusMatch = false;
+          }
+
+          if (titleMatch && statusMatch) {
+            filteredRowsHtml.push(generateProgressRowHtml(wLog, vInfo, window.appData.favorites.indexOf(vId) !== -1));
+          }
+        }
+
+        if (totalVideos === 0 || filteredRowsHtml.length === 0) continue;
+
+        hasVisiblePlaylists = true;
+        var progressPct = Math.floor((completedVideos / totalVideos) * 100);
+        var isAllCompleted = (completedVideos === totalVideos);
+        var headerProgressColor = isAllCompleted ? 'text-appleGreen' : 'text-appleBlue';
+        var headerProgressBg = isAllCompleted ? 'bg-appleGreen' : 'bg-appleBlue';
+
+        if (typeof window.expandedPlaylists[p.id] === 'undefined') window.expandedPlaylists[p.id] = true; 
+        var isExpanded = window.expandedPlaylists[p.id];
+        var chevronIcon = isExpanded ? 'chevron-up' : 'chevron-down';
+        var bodyClass = isExpanded ? '' : 'hidden';
+
+        htmlArr.push('<div class="bg-appleCard border border-appleBorder rounded-2xl shadow-sm overflow-hidden flex flex-col mb-4">');
+        
+        htmlArr.push('  <div class="px-5 py-4 cursor-pointer hover:bg-appleBg/50 transition-colors flex justify-between items-center shrink-0 border-b border-appleBorder/60" onclick="togglePlaylistAccordion(\'' + p.id + '\')">');
+        htmlArr.push('    <div class="flex items-center space-x-3">');
+        htmlArr.push('      <i data-lucide="list-video" class="w-5 h-5 ' + headerProgressColor + '"></i>');
+        htmlArr.push('      <div>');
+        htmlArr.push('        <h3 class="text-base font-bold text-appleDarkText">' + p.name + '</h3>');
+        htmlArr.push('        <div class="flex items-center space-x-2 mt-1">');
+        htmlArr.push('          <span class="px-2 py-0.5 rounded text-[10px] bg-red-100 text-red-700 font-bold border border-red-200 shadow-sm">必修</span>');
+        htmlArr.push('          <span class="text-xs font-mono text-appleGrayText">已完成 ' + completedVideos + ' / ' + totalVideos + ' 部</span>');
+        htmlArr.push('        </div>');
+        htmlArr.push('      </div>');
+        htmlArr.push('    </div>');
+        htmlArr.push('    <div class="flex items-center space-x-4">');
+        htmlArr.push('      <div class="hidden sm:flex flex-col items-end w-24">');
+        htmlArr.push('        <span class="text-[11px] font-bold text-appleDarkText font-mono mb-1">' + progressPct + '%</span>');
+        htmlArr.push('        <div class="w-full bg-appleBorder rounded-full h-1.5 overflow-hidden shadow-inner">');
+        htmlArr.push('          <div class="' + headerProgressBg + ' h-1.5 rounded-full transition-all duration-500" style="width: ' + progressPct + '%"></div>');
+        htmlArr.push('        </div>');
+        htmlArr.push('      </div>');
+        htmlArr.push('      <i data-lucide="' + chevronIcon + '" class="w-5 h-5 text-appleGrayText"></i>');
+        htmlArr.push('    </div>');
+        htmlArr.push('  </div>');
+
+        htmlArr.push('  <div class="' + bodyClass + '">');
+        htmlArr.push('    <div class="overflow-x-auto custom-scrollbar">');
+        htmlArr.push('      <table class="w-full text-left text-sm whitespace-nowrap">');
+        htmlArr.push('        <thead class="bg-appleBg/50 text-appleGrayText font-semibold text-xs uppercase tracking-wider">');
+        htmlArr.push('          <tr><th class="px-5 py-4 w-[55%]">影片資訊</th><th class="px-5 py-4 text-center">觀看數據</th><th class="px-5 py-4 text-center w-[25%]">學習進度</th></tr>');
+        htmlArr.push('        </thead>');
+        htmlArr.push('        <tbody class="divide-y divide-appleBorder/60">');
+        htmlArr.push(filteredRowsHtml.join(''));
+        htmlArr.push('        </tbody>');
+        htmlArr.push('      </table>');
+        htmlArr.push('    </div>');
+        htmlArr.push('  </div>');
+        htmlArr.push('</div>');
+      }
+
+      if (!hasVisiblePlaylists) {
+        container.innerHTML = '<div class="py-12 text-center bg-appleCard border border-appleBorder rounded-2xl shadow-sm"><i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 opacity-50 text-appleGrayText"></i><p class="text-sm font-semibold text-appleGrayText">找不到符合篩選條件的必修影片。</p></div>';
+        try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+        return;
+      }
+
+      container.innerHTML = htmlArr.join('');
+      try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
+
+    function renderStandardProgressList() {
+      var tbody = document.getElementById('progress-table-body'); var filtered = [];
+      for(var i=0; i<window.appData.watchLogs.length; i++) {
+        var log = window.appData.watchLogs[i];
+        if (window.progressTab === 'favorites' && window.appData.favorites.indexOf(log.videoId) === -1) continue;
+
+        var vInfo = null;
+        for(var v=0; v<window.appData.videos.length; v++) { if(window.appData.videos[v].id === log.videoId) { vInfo = window.appData.videos[v]; break; } }
+        if (!vInfo || vInfo.status !== '上架') continue;
+        
+        var vTitle = vInfo ? vInfo.title : "未知影片 (" + log.videoId + ")"; var vCat = vInfo ? vInfo.category : "-";
+        
+        if (window.progressSearchQuery && vTitle.toLowerCase().indexOf(window.progressSearchQuery) === -1) continue;
+        if (window.progressFilterStatus !== 'ALL') {
+            var expectedStatus = (window.progressFilterStatus === '已完成') ? '是' : '否';
+            if (log.isCompleted !== expectedStatus) continue;
+        }
+        filtered.push({ log: log, video: vInfo, title: vTitle, category: vCat });
+      }
+      
+      filtered.sort(function(a, b) { 
+          var dateA = new Date((a.log.lastWatchedAt || '').replace(/-/g, '/')).getTime() || 0;
+          var dateB = new Date((b.log.lastWatchedAt || '').replace(/-/g, '/')).getTime() || 0;
+          return dateB - dateA; 
+      });
+
+      var totalPages = 1; var paginatedList = filtered;
+      if (window.progressItemsPerPage !== 'ALL') {
+        var limit = parseInt(window.progressItemsPerPage, 10); totalPages = Math.ceil(filtered.length / limit) || 1;
+        if (window.progressCurrentPage > totalPages) window.progressCurrentPage = totalPages; if (window.progressCurrentPage < 1) window.progressCurrentPage = 1;
+        var startIndex = (window.progressCurrentPage - 1) * limit; paginatedList = filtered.slice(startIndex, startIndex + limit);
+      } else { window.progressCurrentPage = 1; }
+
+      document.getElementById('progress-page-info').innerText = '第 ' + window.progressCurrentPage + ' / ' + totalPages + ' 頁';
+      document.getElementById('progress-btn-prev').disabled = (window.progressCurrentPage <= 1);
+      document.getElementById('progress-btn-next').disabled = (window.progressCurrentPage >= totalPages);
+
+      if (paginatedList.length === 0) { 
+        var emptyMsg = window.progressTab === 'favorites' ? "找不到符合條件的收藏觀看紀錄。" : "找不到任何觀看紀錄。";
+        var emptyArr = [];
+        emptyArr.push('<tr><td colspan="3" class="px-5 py-12 text-center text-appleGrayText">');
+        emptyArr.push('  <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>');
+        emptyArr.push('  <p class="text-sm font-semibold">' + emptyMsg + '</p>');
+        emptyArr.push('</td></tr>');
+        tbody.innerHTML = emptyArr.join(''); 
+        try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+        return; 
+      }
+
+      var htmlArr = [];
+      for(var i=0; i<paginatedList.length; i++) {
+        var item = paginatedList[i];
+        var isFav = window.appData.favorites.indexOf(item.log.videoId) !== -1;
+        htmlArr.push(generateProgressRowHtml(item.log, item.video, isFav));
+      }
+      tbody.innerHTML = htmlArr.join(''); 
+      try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
+
+    // ==========================================
+    //  後台邏輯 (CRUD 模組與雙 Dashboard 儀表板)
+    // ==========================================
+    
+    function switchAdminTab(viewName) {
+      window.adminTab = viewName;
+      var views = ['dashboard', 'video', 'playlist', 'user'];
+      for(var i=0; i<views.length; i++) {
+        var btn = document.getElementById('admin-tab-' + views[i]);  var view = document.getElementById('admin-' + views[i] + '-view');
+        if (btn) btn.className = "flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-sm font-bold text-appleGrayText hover:text-appleDarkText hover:bg-appleBorder/40 transition-all whitespace-nowrap";
+        if (view) view.classList.add('hidden');
+      }
+      var activeBtn = document.getElementById('admin-tab-' + viewName); var activeView = document.getElementById('admin-' + viewName + '-view');
+      if (activeBtn) activeBtn.className = "flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-sm font-bold bg-white shadow-sm text-appleDarkText transition-all whitespace-nowrap";
+      if (activeView) activeView.classList.remove('hidden');
+
+      var actionBtns = ['video', 'playlist', 'user'];
+      for(var j=0; j<actionBtns.length; j++) {
+         var ab = document.getElementById('btn-add-' + actionBtns[j]);
+         if(ab) { if(viewName === actionBtns[j]) ab.classList.remove('hidden'); else ab.classList.add('hidden'); }
+      }
+
+      if (viewName === 'dashboard') { renderAdminDashboard(); }
+      if (viewName === 'video') { renderAdminVideoList(); }
+      if (viewName === 'playlist') { renderAdminPlaylistList(); }
+      if (viewName === 'user') { renderAdminUserList(); }
+    }
+
+    function switchAdminDashTab(tabName) {
+      window.adminDashTab = tabName;
+      var tabs = ['platform', 'channel', 'personal'];
+      for(var i=0; i<tabs.length; i++) {
+        var btn = document.getElementById('admin-dash-tab-' + tabs[i]);
+        if(btn) {
+           if(tabs[i] === tabName) btn.className = "flex-1 sm:flex-none px-5 py-1.5 rounded-lg text-sm font-bold bg-white shadow-sm text-appleDarkText transition-all whitespace-nowrap";
+           else btn.className = "flex-1 sm:flex-none px-5 py-1.5 rounded-lg text-sm font-bold text-appleGrayText hover:text-appleDarkText hover:bg-appleBorder/40 transition-all whitespace-nowrap";
+        }
+      }
+      renderAdminDashboard();
+    }
+
+    // 🚀 [時間篩選輔助核心] 精準劃分事件週、月、年或自訂區間，落實 0 相容性故障
+    function getFilteredEvents(events, rangeType, startVal, endVal) {
+      const now = new Date();
+      let start = null;
+      let end = null;
+      
+      if (rangeType === 'week') {
+        const day = now.getDay();
+        const diff = now.getDate() - day + (day === 0 ? -6 : 1); // 週一為起始
+        start = new Date(now.getFullYear(), now.getMonth(), diff);
+        start.setHours(0,0,0,0);
+        end = new Date();
+      } else if (rangeType === 'month') {
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = new Date();
+      } else if (rangeType === 'year') {
+        start = new Date(now.getFullYear(), 0, 1);
+        end = new Date();
+      } else if (rangeType === 'custom') {
+        if (startVal) {
+          start = new Date(startVal.replace(/-/g, '/'));
+          start.setHours(0,0,0,0);
+        }
+        if (endVal) {
+          end = new Date(endVal.replace(/-/g, '/'));
+          end.setHours(23,59,59,999);
+        }
+      }
+      
+      return events.filter(function(e) {
+        if (!e.createdAt) return false;
+        var eDate = new Date(e.createdAt.replace(/-/g, '/'));
+        if (isNaN(eDate.getTime())) return false;
+        if (start && eDate < start) return false;
+        if (end && eDate > end) return false;
+        return true;
+      });
+    }
+
+    // 🚀 [新增] 排行榜篩選連動處理函式
+    function onVideoLeaderboardRangeChange(val) {
+      window.adminVideoLeaderboardRange = val;
+      var container = document.getElementById('video-leaderboard-custom-date');
+      if (container) {
+         if (val === 'custom') container.classList.remove('hidden');
+         else container.classList.add('hidden');
+      }
+      renderVideoLeaderboardOnly();
+    }
+
+    function onVideoLeaderboardDateChange() {
+      window.adminVideoLeaderboardStart = document.getElementById('video-leaderboard-start').value;
+      window.adminVideoLeaderboardEnd = document.getElementById('video-leaderboard-end').value;
+      renderVideoLeaderboardOnly();
+    }
+
+    function onUserLeaderboardRangeChange(val) {
+      window.adminUserLeaderboardRange = val;
+      var container = document.getElementById('user-leaderboard-custom-date');
+      if (container) {
+         if (val === 'custom') container.classList.remove('hidden');
+         else container.classList.add('hidden');
+      }
+      renderUserLeaderboardOnly();
+    }
+
+    function onUserLeaderboardDateChange() {
+      window.adminUserLeaderboardStart = document.getElementById('user-leaderboard-start').value;
+      window.adminUserLeaderboardEnd = document.getElementById('user-leaderboard-end').value;
+      renderUserLeaderboardOnly();
+    }
+
+    // 🚀 [新增] 影片點擊率單獨渲染器
+    function renderVideoLeaderboardOnly() {
+      var listDiv = document.getElementById('video-leaderboard-list');
+      if(!listDiv) return;
+      
+      var filteredEvents = getFilteredEvents(window.appData.watchEvents, window.adminVideoLeaderboardRange, window.adminVideoLeaderboardStart, window.adminVideoLeaderboardEnd);
+      
+      var clickMap = {};
+      for(var i=0; i<filteredEvents.length; i++) {
+         var vId = filteredEvents[i].videoId;
+         if(!clickMap[vId]) clickMap[vId] = 0;
+         clickMap[vId]++;
+      }
+      
+      var topVideos = [];
+      for(var id in clickMap) {
+         var vObj = null;
+         for(var j=0; j<window.appData.videos.length; j++) { if(window.appData.videos[j].id === id) { vObj = window.appData.videos[j]; break; } }
+         var title = vObj ? vObj.title : '未知影片 (' + id + ')';
+         var sub = vObj ? (vObj.subCategory || vObj.category) : '-';
+         topVideos.push({ id: id, title: title, subCategory: sub, clicks: clickMap[id] });
+      }
+      topVideos.sort(function(a,b){ return b.clicks - a.clicks; });
+      var top10 = topVideos.slice(0, 10);
+      
+      var arr = [];
+      if(top10.length === 0) {
+         arr.push('<p class="text-xs text-appleGrayText text-center py-10">此區間暫無觀看紀錄</p>');
+      } else {
+         var medals = ['bg-yellow-400', 'bg-gray-300', 'bg-orange-300'];
+         for(var i=0; i<top10.length; i++) {
+            var item = top10[i];
+            var badgeCls = i < 3 ? medals[i] : 'bg-appleBorder text-appleGrayText';
+            arr.push('<div class="flex items-center justify-between p-2 rounded-xl hover:bg-appleBg cursor-pointer transition-colors border border-transparent hover:border-appleBorder group" onclick="openVideoPlayer(\'' + item.id + '\')">');
+            arr.push('  <div class="flex items-center space-x-3 overflow-hidden">');
+            arr.push('    <div class="w-5 h-5 rounded-full ' + badgeCls + ' text-white flex items-center justify-center text-[10px] font-black shrink-0 shadow-xs">' + (i+1) + '</div>');
+            arr.push('    <div class="flex flex-col truncate">');
+            arr.push('      <span class="text-sm font-bold text-appleDarkText truncate group-hover:text-appleBlue transition-colors">' + item.title + '</span>');
+            arr.push('      <span class="text-[10px] text-appleGrayText">' + item.subCategory + '</span>');
+            arr.push('    </div>');
+            arr.push('  </div>');
+            arr.push('  <span class="text-xs font-bold text-appleDarkText font-mono bg-appleBorder px-2 py-0.5 rounded shrink-0 ml-2">' + item.clicks + ' <span class="font-normal text-[10px] text-appleGrayText">次</span></span>');
+            arr.push('</div>');
+         }
+      }
+      listDiv.innerHTML = arr.join('');
+    }
+
+    // 🚀 [新增] 學員時數進度單獨渲染器
+    function renderUserLeaderboardOnly() {
+      var listDiv = document.getElementById('user-leaderboard-list');
+      if(!listDiv) return;
+
+      var filteredEvents = getFilteredEvents(window.appData.watchEvents, window.adminUserLeaderboardRange, window.adminUserLeaderboardStart, window.adminUserLeaderboardEnd);
+      
+      var userMap = {};
+      for(var i=0; i<filteredEvents.length; i++) {
+         var email = filteredEvents[i].email;
+         if(!userMap[email]) userMap[email] = 0;
+         userMap[email] += filteredEvents[i].duration;
+      }
+      
+      var topUsers = [];
+      for(var email in userMap) {
+         var uObj = null;
+         for(var j=0; j<window.appData.adminUsers.length; j++) { if(window.appData.adminUsers[j].email.toLowerCase() === email.toLowerCase()) { uObj = window.appData.adminUsers[j]; break; } }
+         var name = uObj ? uObj.name : email;
+         var store = uObj ? (uObj.storeName || '未指定門市') : '-';
+         topUsers.push({ email: email, name: name, storeName: store, secs: userMap[email] });
+      }
+      topUsers.sort(function(a,b){ return b.secs - a.secs; });
+      var top10 = topUsers.slice(0, 10);
+
+      var arr = [];
+      if(top10.length === 0) {
+         arr.push('<p class="text-xs text-appleGrayText text-center py-10">此區間暫無學習紀錄</p>');
+      } else {
+         var medals = ['bg-yellow-400', 'bg-gray-300', 'bg-orange-300'];
+         for(var i=0; i<top10.length; i++) {
+            var item = top10[i];
+            var badgeCls = i < 3 ? medals[i] : 'bg-appleBorder text-appleGrayText';
+            var displayMins = Math.floor(item.secs / 60);
+            var displaySecs = item.secs % 60;
+            arr.push('<div class="flex items-center justify-between p-2 rounded-xl border border-transparent hover:border-appleBorder hover:bg-appleBg transition-all">');
+            arr.push('  <div class="flex items-center space-x-3 overflow-hidden">');
+            arr.push('    <div class="w-5 h-5 rounded-full ' + badgeCls + ' text-white flex items-center justify-center text-[10px] font-black shrink-0 shadow-xs">' + (i+1) + '</div>');
+            arr.push('    <div class="flex flex-col truncate">');
+            arr.push('      <span class="text-sm font-bold text-appleDarkText truncate">' + item.name + '</span>');
+            arr.push('      <span class="text-[10px] text-appleGrayText">' + item.storeName + '</span>');
+            arr.push('    </div>');
+            arr.push('  </div>');
+            arr.push('  <div class="text-right shrink-0 ml-2">');
+            arr.push('    <span class="text-xs font-bold text-appleBlue font-mono">' + displayMins + '</span><span class="text-[10px] text-appleGrayText mx-0.5">分</span><span class="text-xs font-bold text-appleBlue font-mono">' + displaySecs + '</span><span class="text-[10px] text-appleGrayText ml-0.5">秒</span>');
+            arr.push('  </div>');
+            arr.push('</div>');
+         }
+      }
+      listDiv.innerHTML = arr.join('');
+    }
+
+    // 🚀 [更新] 渲染後台 Dashboard (新增精準 Leaderboard 與 4 大進階統計圖表)
+    function renderAdminDashboard() {
+      var container = document.getElementById('admin-dashboard-content');
+      if(!container) return;
+
+      if(window.adminDashTab === 'channel') {
+         container.innerHTML = '<div class="py-24 text-center"><i data-lucide="network" class="w-16 h-16 text-appleGrayText mx-auto opacity-20 mb-4"></i><h3 class="text-lg font-bold text-appleDarkText mb-1">通路觀看紀錄</h3><p class="text-sm text-appleGrayText">功能模組建置中，敬請期待。</p></div>';
+         try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){} return;
+      }
+      if(window.adminDashTab === 'personal') {
+         container.innerHTML = '<div class="py-24 text-center"><i data-lucide="user-check" class="w-16 h-16 text-appleGrayText mx-auto opacity-20 mb-4"></i><h3 class="text-lg font-bold text-appleDarkText mb-1">個人觀看紀錄</h3><p class="text-sm text-appleGrayText">功能模組建置中，敬請期待。</p></div>';
+         try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){} return;
+      }
+
+      // --- [平台數據] 統計與分析計算 ---
+      var yearsObj = {};
+      for(var i=0; i<window.appData.videos.length; i++) {
+         var v = window.appData.videos[i];
+         if(v.createdAt) {
+            var y = v.createdAt.substring(0, 4);
+            if(y.length === 4 && !isNaN(y)) yearsObj[y] = true;
+         }
+      }
+      var availableYears = Object.keys(yearsObj).sort(function(a,b){return b-a;});
+      if(availableYears.length === 0) availableYears.push(new Date().getFullYear().toString());
+      if(availableYears.indexOf(window.adminDashYear) === -1) window.adminDashYear = availableYears[0];
+
+      var stats = { totalActive: 0, totalInactive: 0, yearActive: 0, yearInactive: 0, months: [] };
+      for(var m=0; m<12; m++) stats.months.push({ active: 0, inactive: 0 });
+
+      for(var i=0; i<window.appData.videos.length; i++) {
+         var v = window.appData.videos[i];
+         if(v.status === '上架') stats.totalActive++; else stats.totalInactive++;
+         
+         if(v.createdAt && v.createdAt.startsWith(window.adminDashYear)) {
+             if(v.status === '上架') stats.yearActive++; else stats.yearInactive++;
+             var mIdx = parseInt(v.createdAt.substring(5, 7), 10) - 1;
+             if(mIdx >= 0 && mIdx < 12) {
+                 if(v.status === '上架') stats.months[mIdx].active++; else stats.months[mIdx].inactive++;
+             }
+         }
+      }
+
+      var maxCount = 0;
+      for(var m=0; m<12; m++) {
+          if(stats.months[m].active > maxCount) maxCount = stats.months[m].active;
+          if(stats.months[m].inactive > maxCount) maxCount = stats.months[m].inactive;
+      }
+      if(maxCount === 0) maxCount = 1;
+
+      var arr = [];
+      
+      // A. 控制篩選器
+      arr.push('<div class="flex justify-between items-center mb-6">');
+      arr.push('  <h3 class="text-base font-bold text-appleDarkText">平台資源健康度</h3>');
+      arr.push('  <select id="admin-dash-year-select" onchange="window.adminDashYear=this.value; renderAdminDashboard();" class="bg-appleBg border border-appleBorder rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-appleBlue/30 cursor-pointer">');
+      for(var y=0; y<availableYears.length; y++) {
+         var sel = (availableYears[y] === window.adminDashYear) ? 'selected' : '';
+         arr.push('    <option value="' + availableYears[y] + '" ' + sel + '>' + availableYears[y] + ' 年</option>');
+      }
+      arr.push('  </select>');
+      arr.push('</div>');
+
+      // B. 四宮格數據卡
+      arr.push('<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">');
+      var createStatCard = function(title, val, unit, colorCls) {
+          return '<div class="bg-appleBg p-4 rounded-xl border border-appleBorder flex flex-col items-center text-center shadow-xs"><span class="text-xs font-bold text-appleGrayText mb-1">' + title + '</span><span class="text-2xl font-bold font-mono ' + colorCls + '">' + val + '<span class="text-[10px] font-normal text-appleGrayText ml-1">' + unit + '</span></span></div>';
+      };
+      arr.push(createStatCard('總上架影片', stats.totalActive, '部', 'text-appleGreen'));
+      arr.push(createStatCard('總下架影片', stats.totalInactive, '部', 'text-appleGrayText'));
+      arr.push(createStatCard('選定年度上架', stats.yearActive, '部', 'text-appleBlue'));
+      arr.push(createStatCard('選定年度下架', stats.yearInactive, '部', 'text-appleDanger'));
+      arr.push('</div>');
+
+      // C. 雙柱狀趨勢圖
+      arr.push('<div class="mt-6 border-t border-appleBorder/60 pt-6">');
+      arr.push('  <div class="flex justify-between items-center mb-4">');
+      arr.push('    <h4 class="text-sm font-bold text-appleDarkText flex items-center"><i data-lucide="bar-chart-3" class="w-4 h-4 mr-1.5 text-appleGrayText"></i>年度上/下架趨勢圖</h4>');
+      arr.push('    <div class="flex items-center space-x-3 text-[10px] font-bold text-appleGrayText"><div class="flex items-center"><div class="w-2 h-2 rounded-sm bg-appleGreen mr-1"></div>上架</div><div class="flex items-center"><div class="w-2 h-2 rounded-sm bg-appleDanger mr-1"></div>下架</div></div>');
+      arr.push('  </div>');
+      arr.push('  <div class="flex items-end justify-between h-48 sm:h-56 pb-2 gap-1 sm:gap-2">');
+      for(var m=0; m<12; m++) {
+          var actPct = Math.round((stats.months[m].active / maxCount) * 100);
+          var inactPct = Math.round((stats.months[m].inactive / maxCount) * 100);
+          arr.push('    <div class="flex flex-col items-center flex-1 h-full relative group">');
+          if(stats.months[m].active > 0 || stats.months[m].inactive > 0) {
+             arr.push('      <div class="absolute -top-10 bg-appleDarkText text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none flex flex-col items-center shadow-lg"><span class="text-appleGreen font-bold">上架: ' + stats.months[m].active + '</span><span class="text-appleDanger font-bold">下架: ' + stats.months[m].inactive + '</span></div>');
+          }
+          arr.push('      <div class="flex items-end justify-center w-full h-full space-x-0.5 sm:space-x-1 border-b border-appleBorder">');
+          arr.push('        <div class="w-2 sm:w-4 ' + (stats.months[m].active > 0 ? 'bg-appleGreen' : 'bg-transparent') + ' rounded-t-sm transition-all duration-1000 group-hover:opacity-80" style="height: ' + actPct + '%"></div>');
+          arr.push('        <div class="w-2 sm:w-4 ' + (stats.months[m].inactive > 0 ? 'bg-appleDanger' : 'bg-transparent') + ' rounded-t-sm transition-all duration-1000 group-hover:opacity-80" style="height: ' + inactPct + '%"></div>');
+          arr.push('      </div>');
+          arr.push('      <span class="text-[9px] sm:text-xs font-bold text-appleGrayText mt-2">' + (m+1) + '月</span>');
+          arr.push('    </div>');
+      }
+      arr.push('  </div>');
+      arr.push('</div>');
+
+      // 🚀 1. 新增：兩個統計排行榜 (雙網格排版 - 影片點擊前10 & 學員歷程前10)
+      arr.push('<div class="mt-10 border-t border-appleBorder/60 pt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">');
+      
+      // 影片排行榜
+      arr.push('  <div class="bg-appleBg/40 border border-appleBorder rounded-2xl p-5 shadow-xs flex flex-col">');
+      arr.push('    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">');
+      arr.push('      <h4 class="text-sm font-bold text-appleDarkText flex items-center"><i data-lucide="star" class="w-4 h-4 mr-1.5 text-appleBlue"></i>影片點擊率排行榜前 10 名</h4>');
+      arr.push('      <select onchange="onVideoLeaderboardRangeChange(this.value)" class="text-xs bg-appleCard border border-appleBorder rounded-lg px-2 py-1 font-bold focus:outline-none focus:ring-1 focus:ring-appleBlue/30 cursor-pointer">');
+      arr.push('        <option value="week" ' + (window.adminVideoLeaderboardRange === 'week' ? 'selected' : '') + '>本週</option>');
+      arr.push('        <option value="month" ' + (window.adminVideoLeaderboardRange === 'month' ? 'selected' : '') + '>本月</option>');
+      arr.push('        <option value="year" ' + (window.adminVideoLeaderboardRange === 'year' ? 'selected' : '') + '>本年</option>');
+      arr.push('        <option value="custom" ' + (window.adminVideoLeaderboardRange === 'custom' ? 'selected' : '') + '>自訂區間</option>');
+      arr.push('      </select>');
+      arr.push('    </div>');
+      arr.push('    <div id="video-leaderboard-custom-date" class="' + (window.adminVideoLeaderboardRange === 'custom' ? '' : 'hidden') + ' flex items-center space-x-2 mb-3 bg-white p-2 rounded-lg border border-appleBorder">');
+      arr.push('      <input type="date" id="video-leaderboard-start" value="' + window.adminVideoLeaderboardStart + '" onchange="onVideoLeaderboardDateChange()" class="text-xs bg-appleBg border border-appleBorder rounded px-2 py-1">');
+      arr.push('      <span class="text-xs text-appleGrayText">至</span>');
+      arr.push('      <input type="date" id="video-leaderboard-end" value="' + window.adminVideoLeaderboardEnd + '" onchange="onVideoLeaderboardDateChange()" class="text-xs bg-appleBg border border-appleBorder rounded px-2 py-1">');
+      arr.push('    </div>');
+      arr.push('    <div id="video-leaderboard-list" class="space-y-1 flex-grow"></div>');
+      arr.push('  </div>');
+
+      // 學員進度排行榜
+      arr.push('  <div class="bg-appleBg/40 border border-appleBorder rounded-2xl p-5 shadow-xs flex flex-col">');
+      arr.push('    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">');
+      arr.push('      <h4 class="text-sm font-bold text-appleDarkText flex items-center"><i data-lucide="award" class="w-4 h-4 mr-1.5 text-orange-500"></i>學員歷程排行榜前 10 名</h4>');
+      arr.push('      <select onchange="onUserLeaderboardRangeChange(this.value)" class="text-xs bg-appleCard border border-appleBorder rounded-lg px-2 py-1 font-bold focus:outline-none focus:ring-1 focus:ring-appleBlue/30 cursor-pointer">');
+      arr.push('        <option value="week" ' + (window.adminUserLeaderboardRange === 'week' ? 'selected' : '') + '>本週</option>');
+      arr.push('        <option value="month" ' + (window.adminUserLeaderboardRange === 'month' ? 'selected' : '') + '>本月</option>');
+      arr.push('        <option value="year" ' + (window.adminUserLeaderboardRange === 'year' ? 'selected' : '') + '>本年</option>');
+      arr.push('        <option value="custom" ' + (window.adminUserLeaderboardRange === 'custom' ? 'selected' : '') + '>自訂區間</option>');
+      arr.push('      </select>');
+      arr.push('    </div>');
+      arr.push('    <div id="user-leaderboard-custom-date" class="' + (window.adminUserLeaderboardRange === 'custom' ? '' : 'hidden') + ' flex items-center space-x-2 mb-3 bg-white p-2 rounded-lg border border-appleBorder">');
+      arr.push('      <input type="date" id="user-leaderboard-start" value="' + window.adminUserLeaderboardStart + '" onchange="onUserLeaderboardDateChange()" class="text-xs bg-appleBg border border-appleBorder rounded px-2 py-1">');
+      arr.push('      <span class="text-xs text-appleGrayText">至</span>');
+      arr.push('      <input type="date" id="user-leaderboard-end" value="' + window.adminUserLeaderboardEnd + '" onchange="onUserLeaderboardDateChange()" class="text-xs bg-appleBg border border-appleBorder rounded px-2 py-1">');
+      arr.push('    </div>');
+      arr.push('    <div id="user-leaderboard-list" class="space-y-1 flex-grow"></div>');
+      arr.push('  </div>');
+      arr.push('</div>');
+
+
+      // 🚀 2. 新增：四大進階綜觀大數據統計圖表 (Data Analytics Suggestions)
+      arr.push('<div class="mt-10 border-t border-appleBorder/60 pt-8">');
+      arr.push('  <h3 class="text-base font-extrabold text-appleDarkText mb-5 flex items-center"><i data-lucide="trending-up" class="w-5 h-5 mr-1.5 text-appleBlue"></i>深度經營分析洞察 (Analytics)</h3>');
+      arr.push('  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">');
+
+      // 門市 / 通路學習戰力排行榜 (按選定年份)
+      var storeStats = {};
+      for(var i=0; i<window.appData.adminUsers.length; i++) {
+         var u = window.appData.adminUsers[i];
+         var sName = u.storeName || '未指定門市';
+         if(!storeStats[sName]) storeStats[sName] = { userCount: 0, totalDuration: 0 };
+         storeStats[sName].userCount++;
+      }
+      var yearEvents = window.appData.watchEvents.filter(function(e) { return e.createdAt && e.createdAt.startsWith(window.adminDashYear); });
+      for(var i=0; i<yearEvents.length; i++) {
+         var ev = yearEvents[i];
+         var userObj = null;
+         for(var j=0; j<window.appData.adminUsers.length; j++) { if(window.appData.adminUsers[j].email.toLowerCase() === ev.email.toLowerCase()) { userObj = window.appData.adminUsers[j]; break; } }
+         var sName = userObj ? (userObj.storeName || '未指定門市') : '未指定門市';
+         if(!storeStats[sName]) storeStats[sName] = { userCount: 1, totalDuration: 0 };
+         storeStats[sName].totalDuration += ev.duration;
+      }
+      
+      var storeLeaderboard = [];
+      for(var s in storeStats) {
+         var avgMins = storeStats[s].userCount > 0 ? Math.round((storeStats[s].totalDuration / 60) / storeStats[s].userCount) : 0;
+         storeLeaderboard.push({ name: s, avgMins: avgMins, count: storeStats[s].userCount });
+      }
+      storeLeaderboard.sort(function(a,b){ return b.avgMins - a.avgMins; });
+      var maxStoreAvg = storeLeaderboard.length > 0 ? storeLeaderboard[0].avgMins : 1;
+
+      arr.push('    <div class="bg-appleCard border border-appleBorder rounded-2xl p-5 shadow-xs flex flex-col">');
+      arr.push('      <h4 class="text-sm font-bold text-appleDarkText mb-1 flex items-center"><i data-lucide="shield-check" class="w-4 h-4 mr-1.5 text-appleBlue"></i>門市學成平均戰力排行榜</h4>');
+      arr.push('      <p class="text-[10px] text-appleGrayText mb-4">平均看課分鐘 / 門市總人數 (防範大店人數優勢)</p>');
+      arr.push('      <div class="space-y-3.5 flex-grow">');
+      if(storeLeaderboard.length === 0) {
+         arr.push('        <p class="text-xs text-appleGrayText text-center py-8">暫無統計資料</p>');
+      } else {
+         var limit = Math.min(storeLeaderboard.length, 5);
+         for(var i=0; i<limit; i++) {
+            var st = storeLeaderboard[i];
+            var pct = maxStoreAvg > 0 ? Math.round((st.avgMins / maxStoreAvg) * 100) : 0;
+            if(pct < 5) pct = 5; 
+            arr.push('        <div>');
+            arr.push('          <div class="flex justify-between text-xs mb-1 font-bold"><span class="text-appleDarkText truncate">' + st.name + ' <span class="text-[10px] font-normal text-appleGrayText">(' + st.count + '人)</span></span><span class="text-appleBlue font-mono">' + st.avgMins + ' <span class="font-normal text-[10px] text-appleGrayText">分鐘/人</span></span></div>');
+            arr.push('          <div class="w-full bg-appleBg rounded-full h-2 overflow-hidden border border-appleBorder shadow-inner">');
+            arr.push('            <div class="bg-appleBlue h-full rounded-full transition-all duration-1000" style="width: ' + pct + '%"></div>');
+            arr.push('          </div>');
+            arr.push('        </div>');
+         }
+      }
+      arr.push('      </div>');
+      arr.push('    </div>');
+
+
+      // 🚀 建議 B：冷門與高放棄率影片分析 (Drop-off Analysis)
+      var videoDropStats = {};
+      for(var i=0; i<window.appData.adminWatchLogs.length; i++) {
+         var log = window.appData.adminWatchLogs[i];
+         if(log.totalDuration > 0) {
+            var ratio = (parseFloat(log.maxReachedTime) || 0) / log.totalDuration;
+            if(!videoDropStats[log.videoId]) videoDropStats[log.videoId] = { totalRatio: 0, logsCount: 0 };
+            videoDropStats[log.videoId].totalRatio += ratio;
+            videoDropStats[log.videoId].logsCount++;
+         }
+      }
+      
+      var dropOffList = [];
+      for(var vId in videoDropStats) {
+         var vObj = null;
+         for(var j=0; j<window.appData.videos.length; j++) { if(window.appData.videos[j].id === vId) { vObj = window.appData.videos[j]; break; } }
+         if(!vObj || vObj.status !== '上架') continue; 
+         
+         var avgComp = videoDropStats[vId].logsCount > 0 ? Math.round((videoDropStats[vId].totalRatio / videoDropStats[vId].logsCount) * 100) : 100;
+         var dropOffRate = 100 - avgComp; 
+         dropOffList.push({ id: vId, title: vObj.title, dropOffRate: dropOffRate, avgComp: avgComp, count: videoDropStats[vId].logsCount });
+      }
+      dropOffList.sort(function(a,b){ return b.dropOffRate - a.dropOffRate; });
+
+      arr.push('    <div class="bg-appleCard border border-appleBorder rounded-2xl p-5 shadow-xs flex flex-col">');
+      arr.push('      <h4 class="text-sm font-bold text-appleDarkText mb-1 flex items-center"><i data-lucide="alert-triangle" class="w-4 h-4 mr-1.5 text-appleDanger"></i>冷門與高放棄率影片警戒 Top 5</h4>');
+      arr.push('      <p class="text-[10px] text-appleGrayText mb-4">平均觀看完課比例極低（點閱但迅速關閉）之重點改進影片</p>');
+      arr.push('      <div class="space-y-3.5 flex-grow">');
+      if(dropOffList.length === 0) {
+         arr.push('        <p class="text-xs text-appleGrayText text-center py-8">目前無看課完成度偏差的影片</p>');
+      } else {
+         var limit = Math.min(dropOffList.length, 5);
+         for(var i=0; i<limit; i++) {
+            var item = dropOffList[i];
+            arr.push('        <div class="flex items-center justify-between p-2 bg-red-50/50 rounded-xl border border-red-100">');
+            arr.push('          <div class="overflow-hidden pr-2 flex-grow">');
+            arr.push('            <p class="text-xs font-bold text-appleDarkText truncate" title="' + item.title + '">' + item.title + '</p>');
+            arr.push('            <div class="w-32 bg-appleBorder h-1 rounded-full mt-1.5 overflow-hidden">');
+            arr.push('               <div class="bg-appleDanger h-full" style="width: ' + item.avgComp + '%"></div>');
+            arr.push('            </div>');
+            arr.push('          </div>');
+            arr.push('          <div class="text-right shrink-0">');
+            arr.push('            <span class="text-xs font-black text-appleDanger font-mono">' + item.dropOffRate + '% <span class="font-bold text-[9px] text-appleGrayText">放棄率</span></span>');
+            arr.push('            <p class="text-[9px] text-appleGrayText mt-0.5">觀看樣本: ' + item.count + ' 人</p>');
+            arr.push('          </div>');
+            arr.push('        </div>');
+         }
+      }
+      arr.push('      </div>');
+      arr.push('    </div>');
+
+
+      // 🚀 建議 C：24小時觀看熱區分佈
+      var hourlyStats = [];
+      for(var h=0; h<24; h++) hourlyStats.push(0);
+      for(var i=0; i<yearEvents.length; i++) {
+         var ev = yearEvents[i];
+         if(ev.createdAt && ev.createdAt.length >= 19) {
+            var hourStr = ev.createdAt.substring(11, 13);
+            var hr = parseInt(hourStr, 10);
+            if(hr >= 0 && hr < 24) hourlyStats[hr]++;
+         }
+      }
+      var maxHourCount = 0;
+      for(var h=0; h<24; h++) { if(hourlyStats[h] > maxHourCount) maxHourCount = hourlyStats[h]; }
+      if(maxHourCount === 0) maxHourCount = 1;
+
+      arr.push('    <div class="bg-appleCard border border-appleBorder rounded-2xl p-5 shadow-xs flex flex-col">');
+      arr.push('      <h4 class="text-sm font-bold text-appleDarkText mb-1 flex items-center"><i data-lucide="clock" class="w-4 h-4 mr-1.5 text-appleBlue"></i>24 小時學員觀看熱區分佈</h4>');
+      arr.push('      <p class="text-[10px] text-appleGrayText mb-4">學員主要是在門市上班、通勤、或是睡前觀課時間點分析</p>');
+      arr.push('      <div class="flex items-end justify-between h-32 pb-1 gap-1 flex-grow">');
+      for(var h=0; h<24; h++) {
+         var pct = Math.round((hourlyStats[h] / maxHourCount) * 100);
+         var label = h % 6 === 0 ? h + 'h' : '';
+         if(h === 23) label = '23h';
+         arr.push('        <div class="flex flex-col items-center flex-1 h-full relative group">');
+         if(hourlyStats[h] > 0) {
+            arr.push('          <div class="absolute -top-7 bg-appleDarkText text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none whitespace-nowrap">' + hourlyStats[h] + ' 次</div>');
+         }
+         arr.push('          <div class="w-full bg-appleBg rounded-t-sm flex items-end justify-center h-full">');
+         arr.push('            <div class="w-full rounded-t-sm transition-all duration-1000 group-hover:opacity-80 h-full" style="height: ' + pct + '%; background-color: #0071E3;"></div>');
+         arr.push('          </div>');
+         arr.push('          <span class="text-[8px] font-black text-appleGrayText mt-1.5">' + label + '</span>');
+         arr.push('        </div>');
+      }
+      arr.push('      </div>');
+      arr.push('    </div>');
+
+
+      // 🚀 建議 D：註冊學員看課轉換漏斗
+      var totalRegUsers = window.appData.adminUsers.length;
+      
+      var activeUsersMap = {};
+      for(var i=0; i<yearEvents.length; i++) { activeUsersMap[yearEvents[i].email.toLowerCase()] = true; }
+      var activeUserCount = Object.keys(activeUsersMap).length;
+
+      var graduatedUserCount = 0;
+      for(var i=0; i<window.appData.adminUsers.length; i++) {
+         var user = window.appData.adminUsers[i];
+         var userLvl = user.level || 'L0';
+         
+         var levelMap = { 'L0': ['L0'], 'L1': ['L1', 'L0'], 'L2': ['L2', 'L1', 'L0'], 'L3': ['L3', 'L2', 'L1', 'L0'], 'TT': ['TT', 'L3', 'L2', 'L1', 'L0'] };
+         var allowedLevels = levelMap[userLvl] || ['L0'];
+         
+         var userReqVids = {};
+         var hasReq = false;
+         for (var pIdx = 0; pIdx < window.appData.playlists.length; pIdx++) {
+           var pl = window.appData.playlists[pIdx];
+           if (pl.isRequired === '是' && allowedLevels.indexOf(pl.targetLevel) !== -1 && pl.videoList) {
+             var vids = pl.videoList.split(',');
+             for (var j = 0; j < vids.length; j++) {
+                if(vids[j].trim() !== '') { userReqVids[vids[j].trim()] = true; hasReq = true; }
+             }
+           }
+         }
+
+         if(!hasReq) {
+            graduatedUserCount++;
+         } else {
+            var completedCount = 0;
+            var reqCount = Object.keys(userReqVids).length;
+            
+            for(var reqVidId in userReqVids) {
+               for(var logIdx = 0; logIdx < window.appData.adminWatchLogs.length; logIdx++) {
+                  var adminLog = window.appData.adminWatchLogs[logIdx];
+                  if(adminLog.email.toLowerCase() === user.email.toLowerCase() && adminLog.videoId === reqVidId && adminLog.isCompleted === '是') {
+                     completedCount++;
+                     break;
+                  }
+               }
+            }
+            if(completedCount === reqCount) graduatedUserCount++;
+         }
+      }
+
+      var activePct = totalRegUsers > 0 ? Math.round((activeUserCount / totalRegUsers) * 100) : 0;
+      var gradPct = totalRegUsers > 0 ? Math.round((graduatedUserCount / totalRegUsers) * 100) : 0;
+
+      arr.push('    <div class="bg-appleCard border border-appleBorder rounded-2xl p-5 shadow-xs flex flex-col">');
+      arr.push('      <h4 class="text-sm font-bold text-appleDarkText mb-1 flex items-center"><i data-lucide="filter" class="w-4 h-4 mr-1.5 text-appleBlue"></i>註冊學員看課與完課轉化漏斗</h4>');
+      arr.push('      <p class="text-[10px] text-appleGrayText mb-4">學員在平台的活躍、留存以及必修項目最終達標的完課轉化率</p>');
+      arr.push('      <div class="space-y-3.5 flex-grow flex flex-col justify-center">');
+      
+      arr.push('        <div class="relative bg-appleBg border border-appleBorder p-2.5 rounded-xl">');
+      arr.push('          <div class="flex justify-between items-center text-xs font-bold text-appleDarkText">');
+      arr.push('             <span>1. 系統註冊學員</span><span class="font-mono text-sm">' + totalRegUsers + '人 (100%)</span>');
+      arr.push('          </div>');
+      arr.push('        </div>');
+
+      arr.push('        <div class="relative bg-blue-50 border border-blue-100 p-2.5 rounded-xl" style="width: 100%">');
+      arr.push('          <div class="flex justify-between items-center text-xs font-bold text-appleBlue">');
+      arr.push('             <span>2. 本期看課學員</span><span class="font-mono text-sm">' + activeUserCount + '人 (' + activePct + '%)</span>');
+      arr.push('          </div>');
+      arr.push('        </div>');
+
+      arr.push('        <div class="relative bg-green-50 border border-green-100 p-2.5 rounded-xl" style="width: 100%">');
+      arr.push('          <div class="flex justify-between items-center text-xs font-bold text-appleGreen">');
+      arr.push('             <span>3. 必修畢業學員</span><span class="font-mono text-sm">' + graduatedUserCount + '人 (' + gradPct + '%)</span>');
+      arr.push('          </div>');
+      arr.push('        </div>');
+
+      arr.push('      </div>');
+      arr.push('    </div>');
+
+      arr.push('  </div>');
+      arr.push('</div>');
+
+      container.innerHTML = arr.join('');
+      
+      // 🚀 初始化渲染兩個排行榜
+      renderVideoLeaderboardOnly();
+      renderUserLeaderboardOnly();
+
+      try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
+
+    // ==========================================
+    //  後台邏輯 (A. 影片維護 CRUD)
+    // ==========================================
+    function changeAdminPage(delta) { window.adminCurrentPage += delta; renderAdminVideoList(); }
+    
+    function renderAdminVideoList() {
+      var tbody = document.getElementById('admin-video-table-body');
+      var filtered = [];
+      for(var f=0; f<window.appData.videos.length; f++) {
+        var v = window.appData.videos[f]; var isMatch = true;
+        if (window.adminSearchQuery) { if (v.title.toLowerCase().indexOf(window.adminSearchQuery) === -1 && v.id.toLowerCase().indexOf(window.adminSearchQuery) === -1) isMatch = false; }
+        if (window.adminCategory !== 'ALL' && isMatch) {
+          if (v.category !== window.adminCategory) isMatch = false;
+          if (window.adminSubCategory !== 'ALL' && v.subCategory !== window.adminSubCategory) isMatch = false;
+        }
+        if(isMatch) filtered.push(v);
+      }
+      filtered.sort(function(a, b) { return (b.createdAt ? new Date(b.createdAt.replace(/-/g, '/')).getTime() : 0) - (a.createdAt ? new Date(a.createdAt.replace(/-/g, '/')).getTime() : 0); });
+      var totalPages = 1; var paginatedList = filtered;
+      if (window.adminItemsPerPage !== 'ALL') {
+        var limit = parseInt(window.adminItemsPerPage, 10); totalPages = Math.ceil(filtered.length / limit) || 1;
+        if (window.adminCurrentPage > totalPages) window.adminCurrentPage = totalPages; if (window.adminCurrentPage < 1) window.adminCurrentPage = 1;
+        var startIndex = (window.adminCurrentPage - 1) * limit; paginatedList = filtered.slice(startIndex, startIndex + limit);
+      } else { window.adminCurrentPage = 1; }
+      document.getElementById('admin-page-info').innerText = '第 ' + window.adminCurrentPage + ' / ' + totalPages + ' 頁';
+      document.getElementById('admin-btn-prev').disabled = (window.adminCurrentPage <= 1);
+      document.getElementById('admin-btn-next').disabled = (window.adminCurrentPage >= totalPages);
+      if (paginatedList.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-appleGrayText text-sm">找不到影片。</td></tr>'; return; }
+      
+      var htmlArr = [];
+      for(var i=0; i<paginatedList.length; i++) {
+        var v = paginatedList[i]; var ytId = extractYoutubeId(v.url); var imgUrl = ytId ? 'https://img.youtube.com/vi/' + ytId + '/default.jpg' : '';
+        var statusBadge = v.status === '上架' ? '<span class="px-2 py-0.5 rounded text-xs bg-green-100 text-green-800">已上架</span>' : '<span class="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-800">下架</span>';
+        var reqBadge = v.isRequired === '是' ? '<span class="px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-700 border border-red-200 mt-1 inline-block">必修</span>' : '';
+        var dateDisplay = v.createdAt ? v.createdAt.substring(0, 10) : '-'; 
+        
+        htmlArr.push('<tr class="hover:bg-appleBg/50">');
+        htmlArr.push('  <td class="px-5 py-4">');
+        htmlArr.push('    <div class="flex items-center space-x-4">');
+        htmlArr.push('      <div class="w-16 h-9 bg-gray-200 rounded overflow-hidden shrink-0">');
+        htmlArr.push('        <img src="' + imgUrl + '" class="w-full h-full object-cover">');
+        htmlArr.push('      </div>');
+        htmlArr.push('      <div>');
+        htmlArr.push('        <p class="text-sm font-bold text-appleDarkText truncate w-48">' + v.title + '</p>');
+        htmlArr.push('        <div class="flex items-center space-x-2">');
+        htmlArr.push('          <p class="text-[10px] text-appleGrayText font-mono">' + v.id + '</p>');
+        htmlArr.push('          ' + reqBadge);
+        htmlArr.push('        </div>');
+        htmlArr.push('      </div>');
+        htmlArr.push('    </div>');
+        htmlArr.push('  </td>');
+        htmlArr.push('  <td class="px-5 py-4 text-sm"><div class="flex flex-col">' + v.category + '<span class="text-xs text-appleGrayText">' + (v.subCategory||'') + '</span></div></td>');
+        htmlArr.push('  <td class="px-5 py-4 text-center"><div class="flex flex-col items-center">' + statusBadge + '<span class="text-[10px] text-appleGrayText mt-1">' + dateDisplay + '</span></div></td>');
+        htmlArr.push('  <td class="px-5 py-4 text-right">');
+        htmlArr.push('    <button type="button" onclick="openAdminVideoModal(\'' + v.id + '\')" class="p-2 text-appleBlue hover:bg-blue-50 rounded-lg"><i data-lucide="edit-2" class="w-4 h-4"></i></button>');
+        htmlArr.push('    <button type="button" onclick="deleteAdminVideo(\'' + v.id + '\')" class="p-2 text-appleDanger hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>');
+        htmlArr.push('  </td>');
+        htmlArr.push('</tr>');
+      }
+      tbody.innerHTML = htmlArr.join(''); try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
+    
+    function openAdminVideoModal(videoId) {
+      try {
+        var modal = document.getElementById('admin-video-modal');
+        if(!modal) return alert("系統錯誤：找不到影片編輯視窗。");
+        
+        var catArr = ['<option value="">請選擇...</option>']; 
+        for(var i=0; i<window.appData.categories.length; i++) { catArr.push('<option value="' + window.appData.categories[i] + '">' + window.appData.categories[i] + '</option>'); }
+        document.getElementById('admin-category').innerHTML = catArr.join('');
+        
+        var rolesArr = []; 
+        for(var j=0; j<window.appData.roles.length; j++) { 
+          rolesArr.push('<label class="flex items-center space-x-2">');
+          rolesArr.push('  <input type="checkbox" value="' + window.appData.roles[j] + '" onchange="updateSelectAllState()" class="admin-role-checkbox w-4 h-4 text-appleBlue rounded focus:ring-appleBlue transition-all">');
+          rolesArr.push('  <span class="text-sm">' + window.appData.roles[j] + '</span>');
+          rolesArr.push('</label>');
+        }
+        document.getElementById('admin-roles-container').innerHTML = rolesArr.join('');
+
+        if (videoId) {
+          var video = null;
+          for(var k=0; k<window.appData.videos.length; k++) { if(window.appData.videos[k].id === videoId) video = window.appData.videos[k]; }
+          if(video) {
+            document.getElementById('admin-modal-title').innerText = "編輯影片"; document.getElementById('admin-id').value = video.id; document.getElementById('admin-title').value = video.title;
+            document.getElementById('admin-url').value = video.url; document.getElementById('admin-category').value = video.category;
+            onAdminModalCategoryChange(); document.getElementById('admin-subcategory').value = video.subCategory || '';
+            document.getElementById('admin-status').checked = (video.status === '上架');
+            document.getElementById('admin-created-at').value = video.createdAt || getCurrentTimestamp(); 
+            var allowed = video.allowedRoles ? video.allowedRoles.split(',') : [];
+            for(var a=0; a<allowed.length; a++) allowed[a] = allowed[a].trim();
+            var roleCbs = document.querySelectorAll('.admin-role-checkbox');
+            for(var n=0; n<roleCbs.length; n++) { roleCbs[n].checked = (allowed.indexOf(roleCbs[n].value) !== -1); }
+            
+            updateSelectAllState(); 
+          }
+        } else {
+          document.getElementById('admin-modal-title').innerText = "新增影片"; document.getElementById('admin-id').value = generateNewId('V'); document.getElementById('admin-title').value = '';
+          document.getElementById('admin-url').value = ''; document.getElementById('admin-category').value = '';
+          onAdminModalCategoryChange(); document.getElementById('admin-status').checked = true; 
+          document.getElementById('admin-created-at').value = '';
+          var roleCbs = document.querySelectorAll('.admin-role-checkbox'); for(var m=0; m<roleCbs.length; m++) roleCbs[m].checked = false;
+          
+          updateSelectAllState(); 
+        }
+        updateAdminStatusText('admin-status', 'admin-status-text');
+        modal.classList.remove('hidden'); setTimeout(function() { modal.classList.remove('opacity-0'); }, 10);
+      } catch (err) { alert("開啟影片設定發生錯誤：" + err.message); console.error(err); }
+    }
+
+    function closeAdminVideoModal() { var modal = document.getElementById('admin-video-modal'); modal.classList.add('opacity-0'); setTimeout(function() { modal.classList.add('hidden'); }, 300); }
+
+    function onAdminModalCategoryChange() {
+      var cat = document.getElementById('admin-category').value; var subSelect = document.getElementById('admin-subcategory');
+      if (!cat) { subSelect.innerHTML = '<option value="">(無)</option>'; return; }
+      var subArr = ['<option value="">(不指定子類別)</option>'];
+      for(var i=0; i<window.appData.subCategories.length; i++) { 
+        if(window.appData.subCategories[i].parent === cat) {
+          subArr.push('<option value="' + window.appData.subCategories[i].name + '">' + window.appData.subCategories[i].name + '</option>'); 
+        }
+      }
+      subSelect.innerHTML = subArr.join('');
+    }
+
+    function saveAdminVideo() {
+      var id = document.getElementById('admin-id').value; var title = document.getElementById('admin-title').value.trim();
+      var url = document.getElementById('admin-url').value.trim(); var category = document.getElementById('admin-category').value;
+      if(!title || !url || !category) return alert("資料未填寫完整！");
+      var rolesArr = []; var checkedRoles = document.querySelectorAll('.admin-role-checkbox:checked');
+      for(var i=0; i<checkedRoles.length; i++) rolesArr.push(checkedRoles[i].value);
+      var isReq = "否"; for(var k=0; k<window.appData.videos.length; k++) { if(window.appData.videos[k].id === id) { isReq = window.appData.videos[k].isRequired; break; } }
+      
+      var existingCreatedAt = document.getElementById('admin-created-at').value;
+      var finalCreatedAt = existingCreatedAt !== '' ? existingCreatedAt : getCurrentTimestamp();
+
+      var videoData = { id: id, title: title, url: url, category: category, subCategory: document.getElementById('admin-subcategory').value, status: document.getElementById('admin-status').checked ? "上架" : "下架", allowedRoles: rolesArr.join(', '), isRequired: isReq, createdAt: finalCreatedAt };
+      
+      var btn = document.getElementById('admin-save-btn'); var spinner = document.getElementById('admin-save-spinner');
+      btn.disabled = true; spinner.classList.remove('hidden');
+      var existingIdx = -1; for(var k=0; k<window.appData.videos.length; k++) { if(window.appData.videos[k].id === id) existingIdx = k; }
+      if (existingIdx > -1) window.appData.videos[existingIdx] = videoData; else window.appData.videos.unshift(videoData);
+      
+      closeAdminVideoModal(); 
+      window.adminCurrentPage = 1; 
+      renderAdminVideoList(); 
+      if(window.adminTab === 'dashboard') renderAdminDashboard();
+      renderVideos();
+      if(document.getElementById('section-progress').classList.contains('hidden') === false) renderProgressList();
+      callAPI('saveAdminVideo', { data: videoData })
+        .then(function(res) { if (res && res.status === 'error') { alert("儲存失敗: " + res.message); } btn.disabled=false; spinner.classList.add('hidden'); })
+        .catch(function(err) { alert("儲存失敗: " + err.message); btn.disabled=false; spinner.classList.add('hidden'); });
+    }
+
+    function deleteAdminVideo(videoId) {
+      if (!confirm("確定徹底刪除此影片？")) return;
+      var newVids = []; for(var i=0; i<window.appData.videos.length; i++){ if(window.appData.videos[i].id !== videoId) newVids.push(window.appData.videos[i]); }
+      window.appData.videos = newVids; 
+      renderAdminVideoList(); 
+      if(window.adminTab === 'dashboard') renderAdminDashboard();
+      renderVideos();
+      if(document.getElementById('section-progress').classList.contains('hidden') === false) renderProgressList();
+      callAPI('deleteAdminVideo', { videoId: videoId }).catch(function(err) { console.error("刪除影片失敗:", err); });
+    }
+
+    function changeAdminPlaylistPage(delta) { window.adminPlaylistCurrentPage += delta; renderAdminPlaylistList(); }
+    
+    function renderAdminPlaylistList() {
+      var tbody = document.getElementById('admin-playlist-table-body'); var filtered = [];
+      for(var i=0; i<window.appData.playlists.length; i++) { if (!window.adminPlaylistSearchQuery || window.appData.playlists[i].name.toLowerCase().indexOf(window.adminPlaylistSearchQuery) !== -1) { filtered.push(window.appData.playlists[i]); } }
+      filtered.sort(function(a, b) { return a.sortOrder - b.sortOrder; });
+      var totalPages = 1; var paginatedList = filtered;
+      if (window.adminPlaylistItemsPerPage !== 'ALL') {
+        var limit = parseInt(window.adminPlaylistItemsPerPage, 10); totalPages = Math.ceil(filtered.length / limit) || 1;
+        if (window.adminPlaylistCurrentPage > totalPages) window.adminPlaylistCurrentPage = totalPages; if (window.adminPlaylistCurrentPage < 1) window.adminPlaylistCurrentPage = 1;
+        var startIndex = (window.adminPlaylistCurrentPage - 1) * limit; paginatedList = filtered.slice(startIndex, startIndex + limit);
+      } else { window.adminPlaylistCurrentPage = 1; }
+      document.getElementById('admin-playlist-page-info').innerText = '第 ' + window.adminPlaylistCurrentPage + ' / ' + totalPages + ' 頁';
+      document.getElementById('admin-playlist-btn-prev').disabled = (window.adminPlaylistCurrentPage <= 1); document.getElementById('admin-playlist-btn-next').disabled = (window.adminPlaylistCurrentPage >= totalPages);
+      if (paginatedList.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-appleGrayText text-sm">找不到播放列表。</td></tr>'; return; }
+      
+      var htmlArr = [];
+      for(var i=0; i<paginatedList.length; i++) {
+        var p = paginatedList[i]; var reqBadge = p.isRequired === '是' ? '<span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-[10px] font-bold border border-red-200">必修</span>' : '<span class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px] border border-gray-200">選修</span>';
+        var vidCount = 0; if(p.videoList) { var vl = p.videoList.split(','); for(var j=0; j<vl.length; j++) { if(vl[j].trim() !== '') vidCount++; } }
+        
+        htmlArr.push('<tr class="hover:bg-appleBg/50">');
+        htmlArr.push('  <td class="px-5 py-4">');
+        htmlArr.push('    <p class="text-sm font-bold text-appleDarkText truncate w-48">' + p.name + '</p>');
+        htmlArr.push('    <p class="text-[10px] text-appleGrayText font-mono">' + p.id + '</p>');
+        htmlArr.push('  </td>');
+        htmlArr.push('  <td class="px-5 py-4 text-center">');
+        htmlArr.push('    <span class="bg-blue-50 text-appleBlue px-2 py-0.5 rounded text-xs font-bold border border-blue-100">' + p.targetLevel + '</span>');
+        htmlArr.push('  </td>');
+        htmlArr.push('  <td class="px-5 py-4 text-center">');
+        htmlArr.push('    <div class="flex flex-col items-center gap-1">');
+        htmlArr.push('      ' + reqBadge);
+        htmlArr.push('      <span class="text-[10px] text-appleGrayText">優先序: ' + p.sortOrder + '</span>');
+        htmlArr.push('    </div>');
+        htmlArr.push('  </td>');
+        htmlArr.push('  <td class="px-5 py-4 text-center text-sm font-bold">' + vidCount + '</td>');
+        htmlArr.push('  <td class="px-5 py-4 text-right">');
+        htmlArr.push('    <button type="button" onclick="openAdminPlaylistModal(\'' + p.id + '\')" class="p-2 text-appleBlue hover:bg-blue-50 rounded-lg"><i data-lucide="edit-2" class="w-4 h-4"></i></button>');
+        htmlArr.push('    <button type="button" onclick="deleteAdminPlaylist(\'' + p.id + '\')" class="p-2 text-appleDanger hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>');
+        htmlArr.push('  </td>');
+        htmlArr.push('</tr>');
+      }
+      tbody.innerHTML = htmlArr.join(''); try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
+
+    function checkPlaylistVideoSelect() {
+      var sel = document.getElementById('admin-playlist-video-select'); var btn = document.getElementById('btn-add-playlist-video');
+      if (btn && sel) { btn.disabled = (sel.value === ""); }
+    }
+
+    function openAdminPlaylistModal(playlistId) {
+      try {
+        var modal = document.getElementById('admin-playlist-modal'); 
+        if(!modal) return alert("系統錯誤：找不到播放列表編輯視窗。");
+        
+        var select = document.getElementById('admin-playlist-video-select'); 
+        var selArr = ['<option value="">選擇要加入的影片...</option>'];
+        for(var i=0; i<window.appData.videos.length; i++) { selArr.push('<option value="' + window.appData.videos[i].id + '">' + window.appData.videos[i].title + ' (' + window.appData.videos[i].id + ')</option>'); }
+        select.innerHTML = selArr.join(''); select.value = ''; checkPlaylistVideoSelect(); 
+        
+        if (playlistId) {
+          var p = null; for(var i=0; i<window.appData.playlists.length; i++) { if(window.appData.playlists[i].id === playlistId) p = window.appData.playlists[i]; }
+          if(p) {
+            document.getElementById('admin-playlist-modal-title').innerText = "編輯播放列表"; document.getElementById('admin-playlist-id').value = p.id;
+            document.getElementById('admin-playlist-name').value = p.name; document.getElementById('admin-playlist-sort').value = p.sortOrder;
+            document.getElementById('admin-playlist-isrequired').checked = (p.isRequired === '是');
+            var levelRadios = document.getElementsByName('adminPlaylistLevel'); for(var i=0; i<levelRadios.length; i++) { levelRadios[i].checked = (levelRadios[i].value === p.targetLevel); }
+            window.modalTempVideoList = []; if(p.videoList) { var vlArr = p.videoList.split(','); for(var j=0; j<vlArr.length; j++) { if(vlArr[j].trim() !== '') window.modalTempVideoList.push(vlArr[j].trim()); } }
+          }
+        } else {
+          document.getElementById('admin-playlist-modal-title').innerText = "新增播放列表"; document.getElementById('admin-playlist-id').value = generateNewId('P');
+          document.getElementById('admin-playlist-name').value = ''; document.getElementById('admin-playlist-sort').value = 99;
+          document.getElementById('admin-playlist-isrequired').checked = false; document.getElementsByName('adminPlaylistLevel')[0].checked = true; window.modalTempVideoList = [];
+        }
+        updateAdminStatusText('admin-playlist-isrequired', 'admin-playlist-req-text'); renderModalPlaylistVideos();
+        modal.classList.remove('hidden'); setTimeout(function() { modal.classList.remove('opacity-0'); }, 10);
+      } catch (err) { alert("開啟播放列表設定發生錯誤：" + err.message); console.error(err); }
+    }
+    
+    function closeAdminPlaylistModal() { var modal = document.getElementById('admin-playlist-modal'); modal.classList.add('opacity-0'); setTimeout(function() { modal.classList.add('hidden'); }, 300); }
+    
+    function renderModalPlaylistVideos() {
+      var list = document.getElementById('admin-playlist-video-list');
+      if(window.modalTempVideoList.length === 0) { list.innerHTML = '<p class="text-xs text-appleGrayText text-center mt-4">尚未加入任何影片</p>'; return; }
+      var htmlArr = [];
+      for(var i=0; i<window.modalTempVideoList.length; i++) {
+        var vid = window.modalTempVideoList[i]; var v = null;
+        for(var j=0; j<window.appData.videos.length; j++) { if(window.appData.videos[j].id === vid) v = window.appData.videos[j]; }
+        var title = v ? v.title : '未知影片 (' + vid + ')';
+        
+        htmlArr.push('<div class="flex items-center justify-between bg-white p-2 rounded-lg border border-appleBorder mb-2 shadow-sm group hover:border-appleBlue transition-colors">');
+        htmlArr.push('  <div class="flex items-center space-x-2 overflow-hidden pr-2">');
+        htmlArr.push('    <span class="text-[10px] font-mono bg-appleBg px-1.5 py-0.5 rounded text-appleGrayText shrink-0">' + (i+1) + '</span>');
+        htmlArr.push('    <span class="text-sm font-bold text-appleDarkText truncate">' + title + '</span>');
+        htmlArr.push('  </div>');
+        htmlArr.push('  <div class="flex items-center space-x-1 shrink-0">');
+        htmlArr.push('    <button type="button" onclick="moveVideoInPlaylist(' + i + ', -1)" class="p-1 text-appleGrayText hover:text-appleBlue rounded"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>');
+        htmlArr.push('    <button type="button" onclick="moveVideoInPlaylist(' + i + ', 1)" class="p-1 text-appleGrayText hover:text-appleBlue rounded"><i data-lucide="arrow-down" class="w-4 h-4"></i></button>');
+        htmlArr.push('    <button type="button" onclick="removeVideoFromPlaylist(' + i + ')" class="p-1 text-appleDanger hover:bg-red-50 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>');
+        htmlArr.push('  </div>');
+        htmlArr.push('</div>');
+      }
+      list.innerHTML = htmlArr.join(''); try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
+
+    function addVideoToPlaylist() {
+      var sel = document.getElementById('admin-playlist-video-select'); var vid = sel.value;
+      if(!vid || vid === "") return alert("請先從下拉選單選擇一部影片！");
+      if(window.modalTempVideoList.indexOf(vid) === -1) { window.modalTempVideoList.push(vid); renderModalPlaylistVideos(); sel.value = ''; checkPlaylistVideoSelect(); } else { alert("此影片已在列表中！"); }
+    }
+    function moveVideoInPlaylist(index, dir) {
+      if(index+dir < 0 || index+dir >= window.modalTempVideoList.length) return;
+      var temp = window.modalTempVideoList[index]; window.modalTempVideoList[index] = window.modalTempVideoList[index+dir]; window.modalTempVideoList[index+dir] = temp;
+      renderModalPlaylistVideos();
+    }
+    function removeVideoFromPlaylist(index) { window.modalTempVideoList.splice(index, 1); renderModalPlaylistVideos(); }
+    
+    function saveAdminPlaylist() {
+      var id = document.getElementById('admin-playlist-id').value; var name = document.getElementById('admin-playlist-name').value.trim();
+      if(!name) return alert("請輸入播放列表名稱！");
+      var targetLvl = 'L0'; var levelRadios = document.getElementsByName('adminPlaylistLevel'); for(var i=0; i<levelRadios.length; i++) { if(levelRadios[i].checked) targetLvl = levelRadios[i].value; }
+      var isReq = document.getElementById('admin-playlist-isrequired').checked ? "是" : "否"; var sortOrd = parseInt(document.getElementById('admin-playlist-sort').value) || 99;
+      var plData = { id: id, name: name, targetLevel: targetLvl, isRequired: isReq, sortOrder: sortOrd, videoList: window.modalTempVideoList.join(','), updatedAt: new Date().toISOString().replace('T', ' ').substring(0, 19) };
+      var btn = document.getElementById('admin-playlist-save-btn'); var spinner = document.getElementById('admin-playlist-save-spinner');
+      btn.disabled = true; spinner.classList.remove('hidden');
+      var existingIdx = -1; for(var i=0; i<window.appData.playlists.length; i++) { if(window.appData.playlists[i].id === id) existingIdx = i; }
+      if (existingIdx > -1) window.appData.playlists[existingIdx] = plData; else window.appData.playlists.push(plData);
+      for(var k=0; k<window.appData.videos.length; k++) {
+         var vId = window.appData.videos[k].id; var globalReq = '否';
+         for(var p=0; p<window.appData.playlists.length; p++){ if(window.appData.playlists[p].isRequired === '是' && window.appData.playlists[p].videoList.indexOf(vId) !== -1) { globalReq = '是'; break; } }
+         window.appData.videos[k].isRequired = globalReq;
+      }
+      closeAdminPlaylistModal(); window.adminPlaylistCurrentPage = 1; renderAdminPlaylistList(); renderVideos(); 
+      if(document.getElementById('section-progress').classList.contains('hidden') === false) renderProgressList();
+      callAPI('saveAdminPlaylist', { data: plData })
+        .then(function(res) { if (res && res.status === 'error') { alert("儲存失敗: " + res.message); } btn.disabled=false; spinner.classList.add('hidden'); })
+        .catch(function(err) { alert("儲存失敗: " + err.message); btn.disabled=false; spinner.classList.add('hidden'); });
+    }
+    
+    function deleteAdminPlaylist(playlistId) {
+      if (!confirm("確定刪除此播放列表？(不會刪除實際影片)")) return;
+      var newP = []; for(var i=0; i<window.appData.playlists.length; i++) { if(window.appData.playlists[i].id !== playlistId) newP.push(window.appData.playlists[i]); }
+      window.appData.playlists = newP;
+      for(var k=0; k<window.appData.videos.length; k++) {
+         var vId = window.appData.videos[k].id; var globalReq = '否';
+         for(var p=0; p<window.appData.playlists.length; p++){ if(window.appData.playlists[p].isRequired === '是' && window.appData.playlists[p].videoList.indexOf(vId) !== -1) { globalReq = '是'; break; } }
+         window.appData.videos[k].isRequired = globalReq;
+      }
+      renderAdminPlaylistList(); renderVideos(); 
+      if(document.getElementById('section-progress').classList.contains('hidden') === false) renderProgressList();
+      callAPI('deleteAdminPlaylist', { id: playlistId }).catch(function(err) { console.error("刪除播放列表失敗:", err); });
+    }
+
+    // ==========================================
+    //  後台邏輯 (C. 帳號管理 CRUD 與組織連動)
+    // ==========================================
+    function changeAdminUserPage(delta) { window.adminUserCurrentPage += delta; renderAdminUserList(); }
+    
+    function renderAdminUserList() {
+      var tbody = document.getElementById('admin-user-table-body'); var filtered = [];
+      for(var i=0; i<window.appData.adminUsers.length; i++) {
+        var u = window.appData.adminUsers[i];
+        if(!window.adminUserSearchQuery || u.email.toLowerCase().indexOf(window.adminUserSearchQuery) !== -1 || u.name.toLowerCase().indexOf(window.adminUserSearchQuery) !== -1) { filtered.push(u); }
+      }
+      var totalPages = 1; var paginatedList = filtered;
+      if (window.adminUserItemsPerPage !== 'ALL') {
+        var limit = parseInt(window.adminUserItemsPerPage, 10); totalPages = Math.ceil(filtered.length / limit) || 1;
+        if (window.adminUserCurrentPage > totalPages) window.adminUserCurrentPage = totalPages; if (window.adminUserCurrentPage < 1) window.adminUserCurrentPage = 1;
+        var startIndex = (window.adminUserCurrentPage - 1) * limit; paginatedList = filtered.slice(startIndex, startIndex + limit);
+      } else { window.adminUserCurrentPage = 1; }
+      document.getElementById('admin-user-page-info').innerText = '第 ' + window.adminUserCurrentPage + ' / ' + totalPages + ' 頁';
+      document.getElementById('admin-user-btn-prev').disabled = (window.adminUserCurrentPage <= 1); document.getElementById('admin-user-btn-next').disabled = (window.adminUserCurrentPage >= totalPages);
+      if (paginatedList.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-appleGrayText text-sm">找不到帳號。</td></tr>'; return; }
+      
+      var htmlArr = [];
+      for(var i=0; i<paginatedList.length; i++) {
+        var u = paginatedList[i]; var roleStr = u.storeRole || '未設定'; var levelBadge = u.level ? '<span class="bg-blue-50 text-appleBlue px-1.5 py-0.5 rounded text-[10px] font-bold ml-1 border border-blue-100">' + u.level + '</span>' : '';
+        htmlArr.push('<tr class="hover:bg-appleBg/50">');
+        htmlArr.push('  <td class="px-5 py-4">');
+        htmlArr.push('    <p class="text-sm font-bold text-appleDarkText">' + u.name + '</p>');
+        htmlArr.push('    <p class="text-xs text-appleGrayText mt-0.5">' + u.email + '</p>');
+        htmlArr.push('  </td>');
+        htmlArr.push('  <td class="px-5 py-4">');
+        htmlArr.push('    <p class="text-sm text-appleDarkText">' + (u.storeName || '未指定門市') + '</p>');
+        htmlArr.push('    <p class="text-[10px] text-appleGrayText">' + (u.channelCategory || '-') + ' / ' + (u.channelName || '-') + '</p>');
+        htmlArr.push('  </td>');
+        htmlArr.push('  <td class="px-5 py-4">');
+        htmlArr.push('    <div class="flex items-center">');
+        htmlArr.push('      <span class="text-sm font-medium text-appleDarkText">' + roleStr + '</span>');
+        htmlArr.push('      ' + levelBadge);
+        htmlArr.push('    </div>');
+        htmlArr.push('  </td>');
+        htmlArr.push('  <td class="px-5 py-4 text-right">');
+        htmlArr.push('    <button type="button" onclick="openAdminUserModal(\'' + u.email + '\')" class="p-2 text-appleBlue hover:bg-blue-50 rounded-lg"><i data-lucide="edit-2" class="w-4 h-4"></i></button>');
+        htmlArr.push('    <button type="button" onclick="deleteAdminUser(\'' + u.email + '\')" class="p-2 text-appleDanger hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>');
+        htmlArr.push('  </td>');
+        htmlArr.push('</tr>');
+      }
+      tbody.innerHTML = htmlArr.join(''); try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
+    
+    function initUserModalDropdowns() {
+      var catArr = ['<option value="">請選擇通路類別...</option>']; 
+      for(var i=0; i<window.appData.channelCategories.length; i++) { catArr.push('<option value="' + window.appData.channelCategories[i] + '">' + window.appData.channelCategories[i] + '</option>'); }
+      document.getElementById('admin-user-channelcategory').innerHTML = catArr.join('');
+      
+      var roleArr = ['<option value="">請選擇角色...</option>']; 
+      for(var j=0; j<window.appData.roles.length; j++) { roleArr.push('<option value="' + window.appData.roles[j] + '">' + window.appData.roles[j] + '</option>'); }
+      document.getElementById('admin-user-storerole').innerHTML = roleArr.join('');
+    }
+
+    function onAdminUserCategoryChange(defaultName) {
+      var cat = document.getElementById('admin-user-channelcategory').value; var nameEl = document.getElementById('admin-user-channelname'); var storeEl = document.getElementById('admin-user-storename');
+      storeEl.innerHTML = '<option value="">請先選擇經銷商...</option>'; storeEl.value = ''; storeEl.disabled = true;
+      if (!cat) { nameEl.innerHTML = '<option value="">請先選擇通路類別...</option>'; nameEl.value = ''; nameEl.disabled = true; return; }
+      nameEl.disabled = false; 
+      var nameArr = ['<option value="">請選擇經銷商...</option>'];
+      for(var i=0; i<window.appData.channelNames.length; i++) { if(window.appData.channelNames[i].parent === cat) nameArr.push('<option value="' + window.appData.channelNames[i].name + '">' + window.appData.channelNames[i].name + '</option>'); }
+      nameEl.innerHTML = nameArr.join(''); if (defaultName) nameEl.value = defaultName;
+    }
+
+    function onAdminUserChannelChange(defaultStore) {
+      var name = document.getElementById('admin-user-channelname').value; var storeEl = document.getElementById('admin-user-storename');
+      if (!name) { storeEl.innerHTML = '<option value="">請先選擇經銷商...</option>'; storeEl.value = ''; storeEl.disabled = true; return; }
+      storeEl.disabled = false; 
+      var storeArr = ['<option value="">請選擇門市名稱...</option>'];
+      for(var i=0; i<window.appData.storeNames.length; i++) { if(window.appData.storeNames[i].parent === name) storeArr.push('<option value="' + window.appData.storeNames[i].name + '">' + window.appData.storeNames[i].name + '</option>'); }
+      storeEl.innerHTML = storeArr.join(''); if (defaultStore) storeEl.value = defaultStore;
+    }
+
+    function togglePasswordVisibility() {
+      var input = document.getElementById('admin-user-password'); var icon = document.getElementById('pwd-eye-icon');
+      if (input.type === 'password') { input.type = 'text'; icon.setAttribute('data-lucide', 'eye-off'); } 
+      else { input.type = 'password'; icon.setAttribute('data-lucide', 'eye'); }
+      try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
+
+    function openAdminUserModal(userEmail) {
+      try {
+        var modal = document.getElementById('admin-user-modal'); 
+        if(!modal) return alert("系統錯誤：找不到帳號編輯視窗。");
+        
+        initUserModalDropdowns();
+        
+        if (userEmail) {
+          var user = null; for(var i=0; i<window.appData.adminUsers.length; i++) { if(window.appData.adminUsers[i].email === userEmail) user = window.appData.adminUsers[i]; }
+          if(user) {
+            document.getElementById('admin-user-modal-title').innerText = "編輯帳號資訊"; 
+            document.getElementById('admin-user-email').value = user.email; document.getElementById('admin-user-email').disabled = true;
+            document.getElementById('admin-user-password').value = user.password || 'abcd1234'; 
+            document.getElementById('admin-user-name').value = user.name; 
+            document.getElementById('admin-user-hiredate').value = user.hireDate;
+            document.getElementById('admin-user-channelcategory').value = user.channelCategory; 
+            onAdminUserCategoryChange(user.channelName); onAdminUserChannelChange(user.storeName);
+            document.getElementById('admin-user-storerole').value = user.storeRole;
+            var lvlRadios = document.getElementsByName('adminUserLevel'); 
+            for(var i=0; i<lvlRadios.length; i++) lvlRadios[i].checked = (lvlRadios[i].value === (user.level || 'L0'));
+          }
+        } else {
+          document.getElementById('admin-user-modal-title').innerText = "新增帳號"; 
+          document.getElementById('admin-user-email').value = ''; document.getElementById('admin-user-email').disabled = false;
+          document.getElementById('admin-user-password').value = 'abcd1234'; document.getElementById('admin-user-name').value = ''; 
+          document.getElementById('admin-user-hiredate').value = '';
+          document.getElementById('admin-user-channelcategory').value = ''; onAdminUserCategoryChange(); 
+          document.getElementById('admin-user-storerole').value = ''; 
+          document.getElementsByName('adminUserLevel')[0].checked = true;
+        }
+        document.getElementById('admin-user-password').type = 'password'; 
+        document.getElementById('pwd-eye-icon').setAttribute('data-lucide', 'eye');
+        try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+        
+        modal.classList.remove('hidden'); setTimeout(function() { modal.classList.remove('opacity-0'); }, 10);
+      } catch (err) { alert("開啟帳號設定發生錯誤：" + err.message); console.error(err); }
+    }
+
+    function closeAdminUserModal() { var modal = document.getElementById('admin-user-modal'); modal.classList.add('opacity-0'); setTimeout(function() { modal.classList.add('hidden'); }, 300); }
+
+    function saveAdminUser() {
+      var email = document.getElementById('admin-user-email').value.trim(); var password = document.getElementById('admin-user-password').value.trim(); var name = document.getElementById('admin-user-name').value.trim();
+      if(!email || !password || !name) return alert("資料填寫不完整！");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert("Email 格式錯誤！");
+      if (password.length < 8) return alert("密碼最少 8 碼！");
+      var selectedLevel = 'L0'; var lvlRadios = document.getElementsByName('adminUserLevel'); for(var i=0; i<lvlRadios.length; i++) { if(lvlRadios[i].checked) selectedLevel = lvlRadios[i].value; }
+      var userData = { email: email, password: password, name: name, hireDate: document.getElementById('admin-user-hiredate').value, channelCategory: document.getElementById('admin-user-channelcategory').value, channelName: document.getElementById('admin-user-channelname').value, storeName: document.getElementById('admin-user-storename').value, storeRole: document.getElementById('admin-user-storerole').value, level: selectedLevel };
+      var btn = document.getElementById('admin-user-save-btn'); var spinner = document.getElementById('admin-user-save-spinner');
+      btn.disabled = true; spinner.classList.remove('hidden');
+      var existingIdx = -1; for(var i=0; i<window.appData.adminUsers.length; i++) { if(window.appData.adminUsers[i].email === email) existingIdx = i; }
+      if (existingIdx > -1) window.appData.adminUsers[existingIdx] = userData; else window.appData.adminUsers.unshift(userData);
+      closeAdminUserModal(); window.adminUserCurrentPage = 1; renderAdminUserList();
+      callAPI('saveAdminUser', { data: userData })
+        .then(function(res) { if (res && res.status === 'error') { alert("儲存失敗: " + res.message); } btn.disabled=false; spinner.classList.add('hidden'); })
+        .catch(function(err) { alert("儲存失敗: " + err.message); btn.disabled=false; spinner.classList.add('hidden'); });
+    }
+
+    function deleteAdminUser(targetEmail) {
+      if (!confirm("確定刪除帳號 [ " + targetEmail + " ] 嗎？")) return;
+      var newU = []; for(var i=0; i<window.appData.adminUsers.length; i++) { if(window.appData.adminUsers[i].email !== targetEmail) newU.push(window.appData.adminUsers[i]); }
+      window.appData.adminUsers = newU; renderAdminUserList();
+      callAPI('deleteAdminUser', { targetEmail: targetEmail }).catch(function(err) { console.error("刪除帳號失敗:", err); });
+    }
+
+    // 🚀 取得當下安全格式時間字串
+    function getCurrentTimestamp() {
+      var d = new Date();
+      var yyyy = d.getFullYear(); var mm = String(d.getMonth() + 1).padStart(2, '0'); var dd = String(d.getDate()).padStart(2, '0');
+      var hh = String(d.getHours()).padStart(2, '0'); var min = String(d.getMinutes()).padStart(2, '0'); var ss = String(d.getSeconds()).padStart(2, '0');
+      return yyyy + '/' + mm + '/' + dd + ' ' + hh + ':' + min + ':' + ss;
+    }
+  </script>
+</body>
+</html>
