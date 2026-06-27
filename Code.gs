@@ -67,6 +67,7 @@ function handleAction(body) {
     else if (action === 'deleteAdminPlaylist') { return deleteAdminPlaylist(email, body.id); }
     else if (action === 'saveAdminUser')       { return saveAdminUser(email, body.data); }
     else if (action === 'deleteAdminUser')     { return deleteAdminUser(email, body.targetEmail); }
+    else if (action === 'changePassword')      { return changePasswordFn(email, body.newPassword); }
     else { return { status: 'error', message: '未知的 action: ' + action }; }
   } catch(err) {
     return { status: 'error', message: err.message };
@@ -91,6 +92,17 @@ function validateUser(email, password) {
 // ==========================================
 //  工具：讀取工作表為 Object 陣列
 // ==========================================
+// ==========================================
+//  修改密碼
+// ==========================================
+function changePasswordFn(email, newPassword) {
+  try {
+    if (!newPassword || String(newPassword).length < 4) return { status: 'error', message: '密碼長度至少 4 碼' };
+    upsertRow("Users", "Email", email, { "Password": String(newPassword) });
+    return { status: 'success' };
+  } catch(e) { return { status: 'error', message: e.message }; }
+}
+
 function getSheetDataAsObjects(sheetName) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(sheetName);

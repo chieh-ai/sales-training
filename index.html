@@ -68,6 +68,10 @@
   <!-- =================  頂部導覽列 ================= -->
   <header id="app-header" class="sticky top-0 z-40 bg-appleBg/80 blur-backdrop border-b border-appleBorder/60 px-6 py-4 flex justify-between items-center hidden">
     <div class="flex items-center"><h1 class="text-xl font-bold tracking-tight text-appleDarkText"> Sales Training</h1></div>
+    <div class="flex items-center space-x-1.5 ml-auto mr-3">
+      <button type="button" onclick="showChangePassword()" title="修改密碼" class="w-8 h-8 rounded-full flex items-center justify-center text-appleGrayText hover:text-appleBlue hover:bg-appleBlue/10 transition-all active:scale-90"><i data-lucide="key-round" class="w-4 h-4"></i></button>
+      <button type="button" onclick="doLogout()" title="登出" class="w-8 h-8 rounded-full flex items-center justify-center text-appleGrayText hover:text-appleDanger hover:bg-appleDanger/10 transition-all active:scale-90"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+    </div>
     <div class="flex items-center space-x-3 bg-appleCard/80 px-3 py-1.5 rounded-2xl border border-appleBorder shadow-sm">
       <div class="w-8 h-8 rounded-full bg-appleBlue/10 flex items-center justify-center shrink-0"><i data-lucide="user" class="w-4 h-4 text-appleBlue"></i></div>
       <div class="text-right">
@@ -565,6 +569,94 @@
       var _tabAdminBtn = document.getElementById('tab-admin');
       if (_tabAdminBtn) _tabAdminBtn.style.display = _isAdmin ? '' : 'none';
       try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
+
+    // ==========================================
+    //  登出 / 修改密碼
+    // ==========================================
+    function doLogout() {
+      window.appCredentials = { email: '', password: '' };
+      window.appData = { user: null, categories: [], subCategories: [], videos: [], favorites: [], roles: [], channelCategories: [], channelNames: [], storeNames: [], adminUsers: [], playlists: [], watchLogs: [], adminWatchLogs: [], watchEvents: [], adminFavorites: [] };
+      if (typeof window.prState !== 'undefined') window.prState = { channel: '', store: '', nameQ: '', selectedEmail: '' };
+      document.getElementById('app-header').classList.add('hidden');
+      document.getElementById('app-main').classList.add('hidden');
+      document.getElementById('app-nav').classList.add('hidden');
+      var loader = document.getElementById('app-loader');
+      if (loader) loader.style.display = '';
+      document.getElementById('login-box').classList.remove('hidden');
+      var ll = document.getElementById('login-loading');
+      if(ll){ ll.classList.add('hidden'); ll.classList.remove('flex'); }
+      document.getElementById('login-email').value = '';
+      document.getElementById('login-password').value = '';
+      document.getElementById('login-error').classList.add('hidden');
+      try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
+
+    function showChangePassword() {
+      var existing = document.getElementById('cp-overlay');
+      if (existing) existing.remove();
+      var overlay = document.createElement('div');
+      overlay.id = 'cp-overlay';
+      overlay.className = 'fixed inset-0 z-50 flex items-center justify-center p-6';
+      overlay.style.backgroundColor = 'rgba(0,0,0,0.4)';
+      overlay.innerHTML = [
+        '<div class="bg-white border border-appleBorder rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">',
+        '  <div class="flex items-center justify-between mb-1">',
+        '    <h3 class="text-base font-bold text-appleDarkText flex items-center gap-2"><i data-lucide="key-round" class="w-4 h-4 text-appleBlue"></i>修改密碼</h3>',
+        '    <button type="button" onclick="document.getElementById('cp-overlay').remove()" class="w-7 h-7 rounded-full flex items-center justify-center text-appleGrayText hover:bg-appleBorder/60 transition-all"><i data-lucide="x" class="w-4 h-4"></i></button>',
+        '  </div>',
+        '  <div class="space-y-3">',
+        '    <div>',
+        '      <label class="text-xs font-bold text-appleGrayText block mb-1">新密碼</label>',
+        '      <input type="password" id="cp-new" placeholder="請輸入新密碼（至少 4 碼）" class="w-full bg-appleBg border border-appleBorder rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30">',
+        '    </div>',
+        '    <div>',
+        '      <label class="text-xs font-bold text-appleGrayText block mb-1">確認新密碼</label>',
+        '      <input type="password" id="cp-confirm" placeholder="再次輸入新密碼" class="w-full bg-appleBg border border-appleBorder rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30">',
+        '    </div>',
+        '    <div id="cp-error" class="hidden text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2"></div>',
+        '  </div>',
+        '  <button id="cp-submit-btn" type="button" onclick="doChangePassword()" class="w-full bg-appleBlue hover:bg-blue-600 text-white py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center space-x-2"><i data-lucide="check" class="w-4 h-4"></i><span>確認修改</span></button>',
+        '</div>'
+      ].join('');
+      document.body.appendChild(overlay);
+      try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+      setTimeout(function(){ var el = document.getElementById('cp-new'); if(el) el.focus(); }, 100);
+    }
+
+    function doChangePassword() {
+      var np = (document.getElementById('cp-new').value||'').trim();
+      var cp = (document.getElementById('cp-confirm').value||'').trim();
+      var errEl = document.getElementById('cp-error');
+      var btn = document.getElementById('cp-submit-btn');
+      errEl.classList.add('hidden');
+      if (!np) { errEl.innerText = '請輸入新密碼'; errEl.classList.remove('hidden'); return; }
+      if (np.length < 4) { errEl.innerText = '密碼長度至少 4 碼'; errEl.classList.remove('hidden'); return; }
+      if (np !== cp) { errEl.innerText = '兩次密碼不一致，請重新輸入'; errEl.classList.remove('hidden'); return; }
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="text-sm">更新中...</span>'; }
+      callAPI('changePassword', { newPassword: np })
+        .then(function(res) {
+          if (res.status === 'error') {
+            errEl.innerText = res.message || '修改失敗，請稍後再試';
+            errEl.classList.remove('hidden');
+            if(btn){ btn.disabled=false; btn.innerHTML='<i data-lucide="check" class="w-4 h-4"></i><span>確認修改</span>'; try{lucide.createIcons();}catch(e){} }
+            return;
+          }
+          window.appCredentials.password = np;
+          var overlay = document.getElementById('cp-overlay');
+          if (overlay) overlay.remove();
+          var toast = document.createElement('div');
+          toast.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#34C759;color:#fff;font-size:14px;font-weight:700;padding:10px 20px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.15);display:flex;align-items:center;gap:8px;white-space:nowrap';
+          toast.innerHTML = '<i data-lucide="check-circle" style="width:16px;height:16px"></i><span>密碼已成功修改</span>';
+          document.body.appendChild(toast);
+          try { if(typeof lucide!=='undefined') lucide.createIcons(); } catch(e){}
+          setTimeout(function(){ if(toast.parentNode) toast.remove(); }, 3000);
+        })
+        .catch(function() {
+          errEl.innerText = '網路錯誤，請稍後再試';
+          errEl.classList.remove('hidden');
+          if(btn){ btn.disabled=false; btn.innerHTML='<i data-lucide="check" class="w-4 h-4"></i><span>確認修改</span>'; try{lucide.createIcons();}catch(e){} }
+        });
     }
 
     function formatTime(seconds) {
