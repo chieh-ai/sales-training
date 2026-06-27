@@ -2151,19 +2151,16 @@
       });
       if (!ch && !st && !q) return '<div class="py-8 text-center"><i data-lucide="users" class="w-10 h-10 text-appleGrayText mx-auto opacity-25 mb-3"></i><p class="text-sm text-appleGrayText">請選擇通路、門市，或輸入姓名搜尋</p></div>';
       if (filtered.length === 0) return '<p class="text-sm text-appleGrayText text-center py-6">沒有符合條件的使用者</p>';
-      return filtered.map(function(u) {
+      var pills = filtered.map(function(u) {
         var isSel = (u.email||'').toLowerCase() === (window.prState.selectedEmail||'').toLowerCase();
-        var bgCls = isSel ? 'bg-appleBlue/5 border-appleBlue/30' : 'bg-appleBg border-transparent hover:border-appleBorder hover:bg-white';
-        return '<div class="flex items-center justify-between px-3 py-2.5 rounded-xl border cursor-pointer transition-all ' + bgCls + '" onclick="prSelectUser(\'' + prEscAttr(u.email||'') + '\')">'
-          + '<div class="flex items-center space-x-2.5 overflow-hidden">'
-          + '<div class="w-7 h-7 rounded-full bg-appleBlue/10 flex items-center justify-center shrink-0"><i data-lucide="user" class="w-3.5 h-3.5 text-appleBlue"></i></div>'
-          + '<div class="overflow-hidden">'
-          + '<p class="text-sm font-bold text-appleDarkText truncate">' + prEscHtml(u.name||'—') + '</p>'
-          + '<p class="text-[10px] text-appleGrayText truncate">' + prEscHtml(u.storeName||'—') + '　' + prEscHtml(u.storeRole||'—') + '</p>'
-          + '</div></div>'
-          + '<span class="text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 ' + prLevelColor(u.level) + '">' + prEscHtml(u.level||'L0') + '</span>'
-          + '</div>';
+        var selCls = isSel ? 'bg-appleBlue text-white shadow-sm' : 'bg-appleCard border border-appleBorder text-appleDarkText hover:border-appleBlue/40 hover:bg-appleBlue/5';
+        var lvlCls = isSel ? 'bg-white/25 text-white' : prLevelColor(u.level);
+        return '<button type="button" onclick="prSelectUser(\'' + prEscAttr(u.email||'') + '\')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold transition-all cursor-pointer ' + selCls + '">'
+          + prEscHtml(u.name||'—')
+          + '<span class="text-[9px] font-black px-1.5 py-0.5 rounded-full ' + lvlCls + '">' + prEscHtml(u.level||'L0') + '</span>'
+          + '</button>';
       }).join('');
+      return '<div class="flex flex-wrap gap-2 py-1">' + pills + '</div>';
     }
 
     function prFilterUserList() {
@@ -2239,17 +2236,25 @@
       arr.push('<div class="border-t border-appleBorder/60 pt-5 mt-2 space-y-5">');
 
       var lvlColor = prLevelColor(user.level);
-      arr.push('<div class="bg-appleBg rounded-2xl border border-appleBorder p-4">');
-      arr.push('<div class="flex items-start space-x-3">');
-      arr.push('<div class="w-11 h-11 rounded-full bg-appleBlue/10 flex items-center justify-center shrink-0"><i data-lucide="user" class="w-5 h-5 text-appleBlue"></i></div>');
-      arr.push('<div class="flex-1 min-w-0">');
-      arr.push('<div class="flex items-center flex-wrap gap-x-2 gap-y-1"><span class="text-base font-bold text-appleDarkText">' + prEscHtml(user.name||'—') + '</span><span class="text-[11px] font-black px-2 py-0.5 rounded-full ' + lvlColor + '">' + prEscHtml(user.level||'L0') + '</span></div>');
-      arr.push('<p class="text-xs text-appleGrayText mt-0.5">' + prEscHtml(user.storeRole||'—') + '</p>');
-      arr.push('<p class="text-xs text-appleGrayText/80 mt-1 break-all">' + prEscHtml(user.email||'') + '</p>');
-      arr.push('</div></div>');
-      arr.push('<div class="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-appleBorder/60">');
-      [['通路', user.channelName], ['門市', user.storeName], ['年資', tenureStr]].forEach(function(it){
-        arr.push('<div class="flex flex-col"><span class="text-[10px] font-bold text-appleGrayText mb-0.5">' + it[0] + '</span><span class="text-xs font-bold text-appleDarkText truncate" title="' + prEscAttr(it[1]||'—') + '">' + prEscHtml(it[1]||'—') + '</span></div>');
+      arr.push('<div class="bg-appleBg rounded-2xl border border-appleBorder px-5 py-4 flex items-center gap-5 flex-wrap">');
+      // 左：頭像 + 姓名 + 職稱
+      arr.push('<div class="flex items-center gap-3 shrink-0">');
+      arr.push('<div class="w-12 h-12 rounded-2xl bg-appleBlue/10 flex items-center justify-center"><i data-lucide="user" class="w-6 h-6 text-appleBlue"></i></div>');
+      arr.push('<div><div class="flex items-center gap-2"><span class="text-base font-black text-appleDarkText">' + prEscHtml(user.name||'—') + '</span><span class="text-[11px] font-black px-2 py-0.5 rounded-full ' + lvlColor + '">' + prEscHtml(user.level||'L0') + '</span></div>');
+      arr.push('<p class="text-xs text-appleGrayText mt-0.5">' + prEscHtml(user.storeRole||'—') + '</p></div></div>');
+      // 右：標籤列（通路、門市、年資、Email）
+      arr.push('<div class="flex flex-wrap gap-2 flex-1 min-w-0">');
+      var tags = [
+        { icon: 'building-2', label: user.channelName||'—' },
+        { icon: 'store',      label: user.storeName||'—'   },
+        { icon: 'calendar',   label: tenureStr              },
+        { icon: 'mail',       label: user.email||'—'       }
+      ];
+      tags.forEach(function(t){
+        arr.push('<div class="flex items-center gap-1.5 bg-appleCard border border-appleBorder rounded-xl px-3 py-1.5 min-w-0">');
+        arr.push('<i data-lucide="' + t.icon + '" class="w-3.5 h-3.5 text-appleGrayText shrink-0"></i>');
+        arr.push('<span class="text-xs font-bold text-appleDarkText truncate max-w-[120px]" title="' + prEscAttr(t.label) + '">' + prEscHtml(t.label) + '</span>');
+        arr.push('</div>');
       });
       arr.push('</div></div>');
 
@@ -2553,12 +2558,12 @@
       }).join('');
 
       var arr = [];
-      arr.push('<div id="pr-activity-wrap" class="bg-appleBg rounded-2xl border border-appleBorder p-4">');
+      arr.push('<div id="pr-activity-wrap" class="bg-appleBg rounded-2xl border border-appleBorder p-4 flex flex-col">');
       arr.push('<div class="flex items-center justify-between mb-3"><h4 class="text-sm font-bold text-appleDarkText flex items-center"><i data-lucide="activity" class="w-4 h-4 mr-1.5 text-appleGreen"></i>學習活躍度</h4><div class="flex items-center gap-1">' + btnHtml + '</div></div>');
       if (range === 'custom') {
         arr.push('<div class="flex items-center gap-2 mb-3"><input type="date" id="pr-act-start" value="' + cStart + '" onchange="window.prActivityCustomStart=this.value;prRefreshActivity()" class="text-xs border border-appleBorder rounded-lg px-2 py-1 bg-white flex-1"><span class="text-xs text-appleGrayText">至</span><input type="date" id="pr-act-end" value="' + cEnd + '" onchange="window.prActivityCustomEnd=this.value;prRefreshActivity()" class="text-xs border border-appleBorder rounded-lg px-2 py-1 bg-white flex-1"></div>');
       }
-      arr.push('<div class="flex items-end justify-between h-28 gap-px pb-1">');
+      arr.push('<div class="flex items-end justify-between gap-px pb-1 flex-grow" style="min-height:8rem">');
       for (var ii=0;ii<buckets.length;ii++) {
         var pct2=maxB>0?Math.round(buckets[ii]/maxB*100):0;
         var minW=buckets.length>20?'style="min-width:10px"':buckets.length>10?'style="min-width:16px"':'';
