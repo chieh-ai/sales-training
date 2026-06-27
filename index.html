@@ -3097,15 +3097,23 @@
       try{JSON.parse(certsJson||'[]').forEach(function(c){saved[c.code]=c;});}catch(e){}
       el.innerHTML=certs.map(function(c){
         var s=saved[c.code]||null;
+        // validity: '有效' or '失效', default '有效' when newly checked
+        var isValid = s ? (s.validity !== '失效') : true;
         return '<div class="border border-appleBorder rounded-xl overflow-hidden">'+
           '<label class="flex items-center gap-2 cursor-pointer px-3 py-2.5 bg-appleBg hover:bg-appleBlue/5 transition-colors">'+
           '<input type="checkbox" class="factory-cert-cb w-4 h-4 rounded text-appleBlue" value="'+c.code+'" '+(s?'checked':'')+' onchange="toggleCertDetails(this,\''+c.code+'\')">'+
           '<span class="text-sm font-bold text-appleDarkText">'+c.label+'</span></label>'+
-          '<div id="cert-d-'+c.code+'" class="'+(s?'':'hidden')+' px-4 py-3 bg-appleCard border-t border-appleBorder grid grid-cols-2 gap-3">'+
-          '<div><label class="block text-[10px] font-bold text-appleGrayText mb-1">通過日期</label>'+
+          '<div id="cert-d-'+c.code+'" class="'+(s?'':'hidden')+' px-4 py-3 bg-appleCard border-t border-appleBorder flex items-end gap-4">'+
+          '<div class="flex-1"><label class="block text-[10px] font-bold text-appleGrayText mb-1">通過日期</label>'+
           '<input type="date" class="cert-pass-date w-full bg-appleBg border border-appleBorder rounded-lg px-2 py-1.5 text-xs" data-code="'+c.code+'" value="'+(s&&s.passDate?s.passDate:'')+'"></div>'+
-          '<div><label class="block text-[10px] font-bold text-appleGrayText mb-1">效期至</label>'+
-          '<input type="date" class="cert-validity w-full bg-appleBg border border-appleBorder rounded-lg px-2 py-1.5 text-xs" data-code="'+c.code+'" value="'+(s&&s.validity?s.validity:'')+'"></div>'+
+          '<div class="shrink-0"><label class="block text-[10px] font-bold text-appleGrayText mb-1 text-center">效度</label>'+
+          '<button type="button" id="cert-toggle-'+c.code+'" data-code="'+c.code+'" data-valid="'+(isValid?'1':'0')+'" onclick="toggleCertValidity(this)" class="relative flex items-center h-8 w-24 rounded-full border transition-all duration-200 '+(isValid?'bg-appleGreen border-appleGreen':'bg-appleBg border-appleBorder')+'">'+
+          '<span class="absolute left-1 right-1 flex justify-between items-center pointer-events-none">'+
+          '<span class="text-[10px] font-black '+(isValid?'text-white':'text-transparent')+'">有效</span>'+
+          '<span class="text-[10px] font-black '+(isValid?'text-transparent':'text-appleGrayText')+'">失效</span>'+
+          '</span>'+
+          '<span class="absolute h-6 w-6 rounded-full bg-white shadow transition-all duration-200 '+(isValid?'left-auto right-1':'left-1')+'"></span>'+
+          '</button></div>'+
           '</div></div>';
       }).join('');
     }
@@ -3113,6 +3121,21 @@
     function toggleCertDetails(cb,code){
       var d=document.getElementById('cert-d-'+code); if(!d) return;
       d.classList[cb.checked?'remove':'add']('hidden');
+    }
+
+    function toggleCertValidity(btn){
+      var isValid = btn.getAttribute('data-valid')==='1';
+      isValid = !isValid;
+      btn.setAttribute('data-valid', isValid?'1':'0');
+      // update colors
+      btn.className='relative flex items-center h-8 w-24 rounded-full border transition-all duration-200 '+(isValid?'bg-appleGreen border-appleGreen':'bg-appleBg border-appleBorder');
+      var spans=btn.querySelectorAll('span > span');
+      if(spans.length>=2){
+        spans[0].className='text-[10px] font-black '+(isValid?'text-white':'text-transparent');
+        spans[1].className='text-[10px] font-black '+(isValid?'text-transparent':'text-appleGrayText');
+      }
+      var dot=btn.querySelector('span.absolute.h-6');
+      if(dot) dot.className='absolute h-6 w-6 rounded-full bg-white shadow transition-all duration-200 '+(isValid?'left-auto right-1':'left-1');
     }
 
     function getSelectedFactoryRoles(){
@@ -3124,8 +3147,9 @@
       document.querySelectorAll('.factory-cert-cb:checked').forEach(function(cb){
         var code=cb.value;
         var pd=document.querySelector('.cert-pass-date[data-code="'+code+'"]');
-        var vd=document.querySelector('.cert-validity[data-code="'+code+'"]');
-        res.push({code:code,passDate:pd?pd.value:'',validity:vd?vd.value:''});
+        var toggleBtn=document.getElementById('cert-toggle-'+code);
+        var isValid=toggleBtn?toggleBtn.getAttribute('data-valid')==='1':true;
+        res.push({code:code,passDate:pd?pd.value:'',validity:isValid?'有效':'失效'});
       });
       return JSON.stringify(res);
     }
