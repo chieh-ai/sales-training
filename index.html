@@ -6,7 +6,6 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v20260627-2 -->
   <title> Sales Training 互動影片學習平台</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -162,6 +161,16 @@
     </section>
     
     <!-- ================= 視圖 3：後台管理系統 ================= -->
+    <section id="section-resource" class="hidden space-y-4">
+      <div class="flex flex-col items-center justify-center py-24 space-y-4">
+        <div class="w-20 h-20 rounded-3xl bg-appleBlue/10 flex items-center justify-center">
+          <i data-lucide="book-open" class="w-10 h-10 text-appleBlue"></i>
+        </div>
+        <h2 class="text-xl font-bold text-appleDarkText">學習資源</h2>
+        <p class="text-sm text-appleGrayText text-center max-w-xs">功能模組建置中，敬請期待。</p>
+        <span class="px-4 py-1.5 rounded-full bg-appleBlue/10 text-appleBlue text-xs font-bold">Coming Soon</span>
+      </div>
+    </section>
     <section id="section-admin" class="hidden space-y-4">
       <div class="flex flex-col sm:flex-row justify-between items-center bg-appleCard p-4 rounded-2xl shadow-sm border border-appleBorder gap-4">
         <div class="flex items-center space-x-3 self-start sm:self-center shrink-0">
@@ -245,6 +254,7 @@
   <nav id="app-nav" class="fixed bottom-0 left-0 right-0 z-40 bg-appleCard/80 blur-backdrop border-t border-appleBorder/60 flex justify-around items-center py-3 px-4 shadow-xl hidden">
     <button type="button" onclick="switchTab('home')" id="tab-home" class="flex flex-row items-center justify-center text-appleBlue flex-1 py-2 rounded-xl transition-colors"><i data-lucide="play" class="w-6 h-6"></i></button>
     <button type="button" onclick="switchTab('progress')" id="tab-progress" class="flex flex-row items-center justify-center text-appleGrayText hover:text-appleDarkText flex-1 py-2 rounded-xl transition-colors"><i data-lucide="bar-chart-2" class="w-6 h-6"></i></button>
+    <button type="button" onclick="switchTab('resource')" id="tab-resource" class="flex flex-row items-center justify-center text-appleGrayText hover:text-appleDarkText flex-1 py-2 rounded-xl transition-colors"><i data-lucide="book-open" class="w-6 h-6"></i></button>
     <button type="button" onclick="switchTab('admin')" id="tab-admin" class="flex flex-row items-center justify-center text-appleGrayText hover:text-appleDarkText flex-1 py-2 rounded-xl transition-colors"><i data-lucide="settings" class="w-6 h-6"></i></button>
   </nav>
 
@@ -995,7 +1005,7 @@
         var _u = window.appData && window.appData.user;
         if (!_u || _u.storeRole !== 'ADMIN' || _u.level !== 'TT') return;
       }
-      var tabs = ['home', 'progress', 'admin'];
+      var tabs = ['home', 'progress', 'resource', 'admin'];
       for(var i=0; i<tabs.length; i++) {
         var btn = document.getElementById('tab-' + tabs[i]); var sec = document.getElementById('section-' + tabs[i]);
         if(btn) { btn.classList.remove('text-appleBlue'); btn.classList.add('text-appleGrayText'); }
@@ -1196,6 +1206,7 @@
       arr.push('<div class="mt-8">');
       arr.push('  <div class="flex items-center space-x-2 mb-5 pl-2"><i data-lucide="activity" class="w-5 h-5 text-appleDarkText"></i><h2 class="text-lg font-bold text-appleDarkText">學習歷程洞察 Analytics</h2></div>');
       arr.push('  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">');
+      arr.push(buildProgressActivityCard());
 
       var subCatArr = []; 
       for(var key in subCatStats) subCatArr.push({ name: key, views: subCatStats[key] });
@@ -1219,31 +1230,6 @@
            arr.push('          </div>');
            arr.push('        </div>');
         }
-      }
-      arr.push('      </div>');
-      arr.push('    </div>');
-
-      var dayKeys = Object.keys(recent7Days).sort(); 
-      var maxMin = 0;
-      for(var i=0; i<dayKeys.length; i++) { if(recent7Days[dayKeys[i]].min > maxMin) maxMin = recent7Days[dayKeys[i]].min; }
-      
-      arr.push('    <div class="bg-appleCard border border-appleBorder rounded-2xl shadow-sm p-5 flex flex-col">');
-      arr.push('      <h3 class="text-sm font-bold text-appleGrayText mb-4">本週學習活躍度 (分鐘)</h3>');
-      arr.push('      <div class="flex items-end justify-between flex-grow h-32 pb-1 gap-2">');
-      var dayNames = ['日', '一', '二', '三', '四', '五', '六'];
-      for(var i=0; i<dayKeys.length; i++) {
-         var item = recent7Days[dayKeys[i]];
-         var hPct = maxMin > 0 ? Math.round((item.min / maxMin) * 100) : 0;
-         var dayName = dayNames[item.dateObj.getDay()];
-         arr.push('        <div class="flex flex-col items-center flex-1 h-full relative group">');
-         if(item.min > 0) {
-            arr.push('          <div class="absolute -top-6 text-[10px] font-mono font-bold text-appleBlue opacity-0 group-hover:opacity-100 transition-opacity">' + item.min + '</div>');
-         }
-         arr.push('          <div class="w-full max-w-[20px] bg-appleBorder rounded-t-sm flex items-end justify-center h-full">');
-         arr.push('            <div class="' + (item.min > 0 ? 'bg-appleGreen' : 'bg-transparent') + ' w-full rounded-t-sm transition-all duration-1000 group-hover:bg-green-400" style="height: ' + hPct + '%"></div>');
-         arr.push('          </div>');
-         arr.push('          <span class="text-[10px] font-bold text-appleGrayText mt-2">' + dayName + '</span>');
-         arr.push('        </div>');
       }
       arr.push('      </div>');
       arr.push('    </div>');
@@ -2357,6 +2343,101 @@
       }
       arr.push('</div>');
       return arr.join('');
+    }
+
+    // ==========================================
+    //  進度 Dashboard 學習活躍度卡片（可篩選）
+    // ==========================================
+    function buildProgressActivityCard() {
+      var emailL = (window.appData.user && window.appData.user.email) ? window.appData.user.email.toLowerCase() : '';
+      var range = window.progressActivityRange || 'week';
+      var cStart = window.progressActivityCustomStart || '';
+      var cEnd   = window.progressActivityCustomEnd   || '';
+      var today  = new Date(); today.setHours(0,0,0,0);
+      var dayNames = ['日','一','二','三','四','五','六'];
+      var buckets = [], labels = [];
+      if (range === 'week') {
+        for (var ii=0;ii<7;ii++) { buckets.push(0); var dt=new Date(today); dt.setDate(dt.getDate()-(6-ii)); labels.push(dayNames[dt.getDay()]); }
+        (window.appData.watchEvents||[]).forEach(function(ev){
+          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          var d=new Date(ev.createdAt.substring(0,10)); d.setHours(0,0,0,0);
+          var diff=Math.round((today-d)/86400000);
+          if(diff>=0&&diff<=6) buckets[6-diff]+=Math.round((ev.duration||0)/60);
+        });
+      } else if (range === 'month') {
+        for (var ii=0;ii<30;ii++) { buckets.push(0); var dt=new Date(today); dt.setDate(dt.getDate()-(29-ii)); labels.push(ii%5===0||ii===29?(dt.getMonth()+1)+'/'+dt.getDate():''); }
+        (window.appData.watchEvents||[]).forEach(function(ev){
+          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          var d=new Date(ev.createdAt.substring(0,10)); d.setHours(0,0,0,0);
+          var diff=Math.round((today-d)/86400000);
+          if(diff>=0&&diff<=29) buckets[29-diff]+=Math.round((ev.duration||0)/60);
+        });
+      } else if (range === 'year') {
+        for (var ii=0;ii<12;ii++) { buckets.push(0); var dt=new Date(today.getFullYear(),today.getMonth()-(11-ii),1); labels.push((dt.getMonth()+1)+'月'); }
+        (window.appData.watchEvents||[]).forEach(function(ev){
+          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          var d=new Date(ev.createdAt.substring(0,10));
+          var mDiff=(today.getFullYear()-d.getFullYear())*12+(today.getMonth()-d.getMonth());
+          if(mDiff>=0&&mDiff<=11) buckets[11-mDiff]+=Math.round((ev.duration||0)/60);
+        });
+      } else {
+        var sd=cStart?new Date(cStart):new Date(today); sd.setHours(0,0,0,0);
+        var ed=cEnd?new Date(cEnd):new Date(today); ed.setHours(0,0,0,0);
+        if(ed<sd){var tmp2=sd;sd=ed;ed=tmp2;}
+        var days=Math.min(Math.round((ed-sd)/86400000)+1,60);
+        for (var ii=0;ii<days;ii++){
+          buckets.push(0);
+          var dt=new Date(sd); dt.setDate(dt.getDate()+ii);
+          labels.push(days<=14||ii%Math.ceil(days/8)===0||ii===days-1?(dt.getMonth()+1)+'/'+dt.getDate():'');
+        }
+        (window.appData.watchEvents||[]).forEach(function(ev){
+          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          var d=new Date(ev.createdAt.substring(0,10)); d.setHours(0,0,0,0);
+          var diff=Math.round((d-sd)/86400000);
+          if(diff>=0&&diff<days) buckets[diff]+=Math.round((ev.duration||0)/60);
+        });
+      }
+      var maxB=Math.max.apply(null,buckets.length?buckets:[0]); if(maxB===0) maxB=1;
+      var ropts=[{k:'week',l:'週'},{k:'month',l:'月'},{k:'year',l:'年'},{k:'custom',l:'自訂'}];
+      var btnHtml=ropts.map(function(r){
+        var a=range===r.k;
+        var cls=a?'px-2.5 py-0.5 rounded-lg text-xs font-bold bg-appleBlue text-white':'px-2.5 py-0.5 rounded-lg text-xs font-bold text-appleGrayText hover:bg-appleBorder/60 transition-colors';
+        return '<button type="button" onclick="setProgressActivityRange(\'' + r.k + '\')" class="' + cls + '">' + r.l + '</button>';
+      }).join('');
+      var a2=[];
+      a2.push('<div id="progress-activity-wrap" class="bg-appleCard border border-appleBorder rounded-2xl shadow-sm p-5 flex flex-col">');
+      a2.push('<div class="flex items-center justify-between mb-3"><h3 class="text-sm font-bold text-appleGrayText flex items-center gap-1.5"><i data-lucide="activity" class="w-4 h-4 text-appleGreen"></i>學習活躍度</h3><div class="flex items-center gap-1">' + btnHtml + '</div></div>');
+      if(range==='custom'){
+        a2.push('<div class="flex items-center gap-2 mb-3"><input type="date" id="pg-act-start" value="' + cStart + '" onchange="window.progressActivityCustomStart=this.value;refreshProgressActivityCard()" class="text-xs border border-appleBorder rounded-lg px-2 py-1 bg-appleBg flex-1"><span class="text-xs text-appleGrayText">至</span><input type="date" id="pg-act-end" value="' + cEnd + '" onchange="window.progressActivityCustomEnd=this.value;refreshProgressActivityCard()" class="text-xs border border-appleBorder rounded-lg px-2 py-1 bg-appleBg flex-1"></div>');
+      }
+      a2.push('<div class="flex items-end justify-between h-28 gap-px pb-1 flex-grow">');
+      for(var ii=0;ii<buckets.length;ii++){
+        var p=maxB>0?Math.round(buckets[ii]/maxB*100):0;
+        var mw=buckets.length>20?'style="min-width:10px"':buckets.length>10?'style="min-width:16px"':'';
+        a2.push('<div class="flex flex-col items-center flex-1 h-full" ' + mw + '>');
+        a2.push('<div class="w-full flex flex-col justify-end h-full border-b border-appleBorder">');
+        a2.push('<div class="' + (ii===buckets.length-1?'bg-appleGreen':'bg-appleGreen/35') + ' rounded-t-sm mx-px transition-all duration-700" style="height:' + p + '%"></div>');
+        a2.push('</div>');
+        a2.push('<span class="text-[9px] font-bold text-appleGrayText mt-1" style="white-space:nowrap">' + (labels[ii]||'') + '</span>');
+        if(buckets[ii]>0) a2.push('<span class="text-[8px] text-appleGreen font-mono">' + buckets[ii] + '</span>');
+        a2.push('</div>');
+      }
+      a2.push('</div></div>');
+      return a2.join('');
+    }
+
+    function setProgressActivityRange(range) {
+      window.progressActivityRange = range;
+      refreshProgressActivityCard();
+    }
+
+    function refreshProgressActivityCard() {
+      var wrap = document.getElementById('progress-activity-wrap');
+      if (!wrap) return;
+      var tmp = document.createElement('div');
+      tmp.innerHTML = buildProgressActivityCard();
+      wrap.parentNode.replaceChild(tmp.firstChild, wrap);
+      try { if(typeof lucide!=='undefined') lucide.createIcons(); } catch(e) {}
     }
 
     function buildActivityChart(emailL) {
