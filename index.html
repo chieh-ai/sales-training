@@ -427,6 +427,7 @@
     window.expandedPlaylists = {}; 
     
     window.adminTab = 'dashboard'; window.adminDashTab = 'platform'; window.adminDashYear = new Date().getFullYear().toString();
+    window.adminAnalyticsMode = 'year'; window.adminAnalyticsStart = ''; window.adminAnalyticsEnd = '';
     
     // 🚀 [更新] 排行榜獨立時間維度與自訂日期控制變數
     window.adminVideoLeaderboardRange = 'week';
@@ -1996,58 +1997,35 @@
 
 
       // 🚀 2. 新增：四大進階綜觀大數據統計圖表 (Data Analytics Suggestions)
-      arr.push('<div class="mt-10 border-t border-appleBorder/60 pt-8">');
-      arr.push('  <h3 class="text-base font-extrabold text-appleDarkText mb-5 flex items-center"><i data-lucide="trending-up" class="w-5 h-5 mr-1.5 text-appleBlue"></i>深度經營分析洞察 (Analytics)</h3>');
-      arr.push('  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">');
-
-      // 門市 / 通路學習戰力排行榜 (按選定年份)
-      var storeStats = {};
-      for(var i=0; i<window.appData.adminUsers.length; i++) {
-         var u = window.appData.adminUsers[i];
-         var sName = u.storeName || '未指定門市';
-         if(!storeStats[sName]) storeStats[sName] = { userCount: 0, totalDuration: 0 };
-         storeStats[sName].userCount++;
-      }
+      // yearEvents 仍供漏斗等其他卡片使用
       var yearEvents = window.appData.watchEvents.filter(function(e) { return e.createdAt && e.createdAt.startsWith(window.adminDashYear); });
-      for(var i=0; i<yearEvents.length; i++) {
-         var ev = yearEvents[i];
-         var userObj = null;
-         for(var j=0; j<window.appData.adminUsers.length; j++) { if(window.appData.adminUsers[j].email.toLowerCase() === ev.email.toLowerCase()) { userObj = window.appData.adminUsers[j]; break; } }
-         var sName = userObj ? (userObj.storeName || '未指定門市') : '未指定門市';
-         if(!storeStats[sName]) storeStats[sName] = { userCount: 1, totalDuration: 0 };
-         storeStats[sName].totalDuration += ev.duration;
-      }
-      
-      var storeLeaderboard = [];
-      for(var s in storeStats) {
-         var avgMins = storeStats[s].userCount > 0 ? Math.round((storeStats[s].totalDuration / 60) / storeStats[s].userCount) : 0;
-         storeLeaderboard.push({ name: s, avgMins: avgMins, count: storeStats[s].userCount });
-      }
-      storeLeaderboard.sort(function(a,b){ return b.avgMins - a.avgMins; });
-      var maxStoreAvg = storeLeaderboard.length > 0 ? storeLeaderboard[0].avgMins : 1;
 
-      arr.push('    <div class="bg-appleCard border border-appleBorder rounded-2xl p-5 shadow-xs flex flex-col">');
-      arr.push('      <h4 class="text-sm font-bold text-appleDarkText mb-1 flex items-center"><i data-lucide="shield-check" class="w-4 h-4 mr-1.5 text-appleBlue"></i>門市學成平均戰力排行榜</h4>');
-      arr.push('      <p class="text-[10px] text-appleGrayText mb-4">平均看課分鐘 / 門市總人數 (防範大店人數優勢)</p>');
-      arr.push('      <div class="space-y-3.5 flex-grow">');
-      if(storeLeaderboard.length === 0) {
-         arr.push('        <p class="text-xs text-appleGrayText text-center py-8">暫無統計資料</p>');
-      } else {
-         var limit = Math.min(storeLeaderboard.length, 5);
-         for(var i=0; i<limit; i++) {
-            var st = storeLeaderboard[i];
-            var pct = maxStoreAvg > 0 ? Math.round((st.avgMins / maxStoreAvg) * 100) : 0;
-            if(pct < 5) pct = 5; 
-            arr.push('        <div>');
-            arr.push('          <div class="flex justify-between text-xs mb-1 font-bold"><span class="text-appleDarkText truncate">' + st.name + ' <span class="text-[10px] font-normal text-appleGrayText">(' + st.count + '人)</span></span><span class="text-appleBlue font-mono">' + st.avgMins + ' <span class="font-normal text-[10px] text-appleGrayText">分鐘/人</span></span></div>');
-            arr.push('          <div class="w-full bg-appleBg rounded-full h-2 overflow-hidden border border-appleBorder shadow-inner">');
-            arr.push('            <div class="bg-appleBlue h-full rounded-full transition-all duration-1000" style="width: ' + pct + '%"></div>');
-            arr.push('          </div>');
-            arr.push('        </div>');
-         }
-      }
-      arr.push('      </div>');
+      arr.push('<div class="mt-10 border-t border-appleBorder/60 pt-8">');
+      arr.push('  <h3 class="text-base font-extrabold text-appleDarkText mb-3 flex items-center"><i data-lucide="trending-up" class="w-5 h-5 mr-1.5 text-appleBlue"></i>深度經營分析洞察 (Analytics)</h3>');
+
+      // ── 篩選列（戰力榜 + 熱區共用）
+      arr.push('  <div class="flex items-center gap-2 mb-5 flex-wrap" id="analytics-filter-bar">');
+      arr.push('    <span class="text-xs font-bold text-appleGrayText">篩選期間：</span>');
+      var arModes = [['week','週'],['month','月'],['year','年'],['custom','日期區間']];
+      arModes.forEach(function(m){
+        var active = (window.adminAnalyticsMode||'year') === m[0];
+        var cls = active
+          ? 'px-3 py-1 rounded-lg text-xs font-bold bg-appleBlue text-white transition-all'
+          : 'px-3 py-1 rounded-lg text-xs font-bold bg-appleCard border border-appleBorder text-appleGrayText hover:text-appleDarkText transition-all';
+        arr.push('    <button type="button" id="ar-btn-' + m[0] + '" onclick="setAnalyticsMode(\'' + m[0] + '\')" class="' + cls + '">' + m[1] + '</button>');
+      });
+      var customHidden = (window.adminAnalyticsMode||'year') !== 'custom' ? 'hidden' : '';
+      arr.push('    <div id="ar-custom-row" class="flex items-center gap-1.5 ' + customHidden + '">');
+      arr.push('      <input type="date" id="ar-start-date" value="' + (window.adminAnalyticsStart||'') + '" class="text-xs bg-appleBg border border-appleBorder rounded-lg px-2 py-1">');
+      arr.push('      <span class="text-xs text-appleGrayText">—</span>');
+      arr.push('      <input type="date" id="ar-end-date" value="' + (window.adminAnalyticsEnd||'') + '" class="text-xs bg-appleBg border border-appleBorder rounded-lg px-2 py-1">');
+      arr.push('      <button type="button" onclick="applyAnalyticsCustomRange()" class="px-3 py-1 rounded-lg text-xs font-bold bg-appleBlue text-white">套用</button>');
       arr.push('    </div>');
+      arr.push('  </div>');
+
+      // ── 兩張動態卡片容器（由 renderAnalyticsCards() 填入）
+      arr.push('  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8" id="analytics-two-cards"></div>');
+      arr.push('  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">');
 
 
       // 🚀 建議 B：冷門與高放棄率影片分析 (Drop-off Analysis)
@@ -2102,41 +2080,7 @@
       arr.push('    </div>');
 
 
-      // 🚀 建議 C：24小時觀看熱區分佈
-      var hourlyStats = [];
-      for(var h=0; h<24; h++) hourlyStats.push(0);
-      for(var i=0; i<yearEvents.length; i++) {
-         var ev = yearEvents[i];
-         if(ev.createdAt && ev.createdAt.length >= 19) {
-            var hourStr = ev.createdAt.substring(11, 13);
-            var hr = parseInt(hourStr, 10);
-            if(hr >= 0 && hr < 24) hourlyStats[hr]++;
-         }
-      }
-      var maxHourCount = 0;
-      for(var h=0; h<24; h++) { if(hourlyStats[h] > maxHourCount) maxHourCount = hourlyStats[h]; }
-      if(maxHourCount === 0) maxHourCount = 1;
-
-      arr.push('    <div class="bg-appleCard border border-appleBorder rounded-2xl p-5 shadow-xs flex flex-col">');
-      arr.push('      <h4 class="text-sm font-bold text-appleDarkText mb-1 flex items-center"><i data-lucide="clock" class="w-4 h-4 mr-1.5 text-appleBlue"></i>24 小時學員觀看熱區分佈</h4>');
-      arr.push('      <p class="text-[10px] text-appleGrayText mb-4">學員主要是在門市上班、通勤、或是睡前觀課時間點分析</p>');
-      arr.push('      <div class="flex items-end justify-between h-32 pb-1 gap-1 flex-grow">');
-      for(var h=0; h<24; h++) {
-         var pct = Math.round((hourlyStats[h] / maxHourCount) * 100);
-         var label = h % 6 === 0 ? h + 'h' : '';
-         if(h === 23) label = '23h';
-         arr.push('        <div class="flex flex-col items-center flex-1 h-full relative group">');
-         if(hourlyStats[h] > 0) {
-            arr.push('          <div class="absolute -top-7 bg-appleDarkText text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none whitespace-nowrap">' + hourlyStats[h] + ' 次</div>');
-         }
-         arr.push('          <div class="w-full bg-appleBg rounded-t-sm flex items-end justify-center h-full">');
-         arr.push('            <div class="w-full rounded-t-sm transition-all duration-1000 group-hover:opacity-80 h-full" style="height: ' + pct + '%; background-color: #0071E3;"></div>');
-         arr.push('          </div>');
-         arr.push('          <span class="text-[8px] font-black text-appleGrayText mt-1.5">' + label + '</span>');
-         arr.push('        </div>');
-      }
-      arr.push('      </div>');
-      arr.push('    </div>');
+      // (24小時熱區 已移至 renderAnalyticsCards())
 
 
       // 🚀 建議 D：註冊學員看課轉換漏斗
@@ -2218,11 +2162,154 @@
       arr.push('</div>');
 
       container.innerHTML = arr.join('');
-      
+
       // 🚀 初始化渲染兩個排行榜
       renderVideoLeaderboardOnly();
       renderUserLeaderboardOnly();
+      renderAnalyticsCards();
 
+      try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+    }
+
+    // ── 篩選期間輔助
+    function getAnalyticsEvents() {
+      var mode = window.adminAnalyticsMode || 'year';
+      var allEv = window.appData.watchEvents || [];
+      var now = new Date();
+      if (mode === 'week') {
+        var cutoff = new Date(now.getTime() - 7 * 86400000);
+        return allEv.filter(function(e){
+          if (!e.createdAt) return false;
+          var d = new Date(e.createdAt.replace(/\//g,'-').replace(' ','T'));
+          return !isNaN(d) && d >= cutoff;
+        });
+      }
+      if (mode === 'month') {
+        var cutoff = new Date(now.getTime() - 30 * 86400000);
+        return allEv.filter(function(e){
+          if (!e.createdAt) return false;
+          var d = new Date(e.createdAt.replace(/\//g,'-').replace(' ','T'));
+          return !isNaN(d) && d >= cutoff;
+        });
+      }
+      if (mode === 'custom') {
+        var s = window.adminAnalyticsStart, en = window.adminAnalyticsEnd;
+        if (!s || !en) return allEv;
+        var sd = new Date(s), ed = new Date(en); ed.setHours(23,59,59,999);
+        return allEv.filter(function(e){
+          if (!e.createdAt) return false;
+          var d = new Date(e.createdAt.replace(/\//g,'-').replace(' ','T'));
+          return !isNaN(d) && d >= sd && d <= ed;
+        });
+      }
+      // year (default)
+      return allEv.filter(function(e){ return e.createdAt && e.createdAt.startsWith(window.adminDashYear); });
+    }
+
+    function setAnalyticsMode(mode) {
+      window.adminAnalyticsMode = mode;
+      var row = document.getElementById('ar-custom-row');
+      if (row) row.classList.toggle('hidden', mode !== 'custom');
+      var modes = ['week','month','year','custom'];
+      modes.forEach(function(m){
+        var btn = document.getElementById('ar-btn-' + m);
+        if (!btn) return;
+        if (m === mode) {
+          btn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-appleBlue text-white transition-all';
+        } else {
+          btn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-appleCard border border-appleBorder text-appleGrayText hover:text-appleDarkText transition-all';
+        }
+      });
+      if (mode !== 'custom') renderAnalyticsCards();
+    }
+
+    function applyAnalyticsCustomRange() {
+      var s = document.getElementById('ar-start-date');
+      var e = document.getElementById('ar-end-date');
+      window.adminAnalyticsStart = s ? s.value : '';
+      window.adminAnalyticsEnd   = e ? e.value : '';
+      renderAnalyticsCards();
+    }
+
+    function renderAnalyticsCards() {
+      var wrapper = document.getElementById('analytics-two-cards');
+      if (!wrapper) return;
+      var filteredEv = getAnalyticsEvents();
+      var a = [];
+
+      // ── 卡片 1：門市學成平均戰力排行榜
+      var storeStats = {};
+      (window.appData.adminUsers||[]).forEach(function(u){
+        var sName = u.storeName || '未指定門市';
+        if(!storeStats[sName]) storeStats[sName] = { userCount: 0, totalDuration: 0 };
+        storeStats[sName].userCount++;
+      });
+      filteredEv.forEach(function(ev){
+        var userObj = null;
+        for(var j=0;j<(window.appData.adminUsers||[]).length;j++){
+          if(window.appData.adminUsers[j].email.toLowerCase()===ev.email.toLowerCase()){ userObj=window.appData.adminUsers[j]; break; }
+        }
+        var sName = userObj ? (userObj.storeName||'未指定門市') : '未指定門市';
+        if(!storeStats[sName]) storeStats[sName] = { userCount:1, totalDuration:0 };
+        storeStats[sName].totalDuration += ev.duration;
+      });
+      var storeLeaderboard = [];
+      for(var s in storeStats){
+        var avgMins = storeStats[s].userCount > 0 ? Math.round((storeStats[s].totalDuration/60)/storeStats[s].userCount) : 0;
+        storeLeaderboard.push({ name:s, avgMins:avgMins, count:storeStats[s].userCount });
+      }
+      storeLeaderboard.sort(function(a,b){ return b.avgMins-a.avgMins; });
+      var maxStoreAvg = storeLeaderboard.length > 0 ? storeLeaderboard[0].avgMins : 1;
+      if(maxStoreAvg === 0) maxStoreAvg = 1;
+
+      a.push('<div class="bg-appleCard border border-appleBorder rounded-2xl p-5 shadow-xs flex flex-col">');
+      a.push('<h4 class="text-sm font-bold text-appleDarkText mb-1 flex items-center"><i data-lucide="shield-check" class="w-4 h-4 mr-1.5 text-appleBlue"></i>門市學成平均戰力排行榜</h4>');
+      a.push('<p class="text-[10px] text-appleGrayText mb-4">平均看課分鐘 / 門市總人數 (防範大店人數優勢)</p>');
+      a.push('<div class="space-y-3.5 flex-grow">');
+      if(storeLeaderboard.length === 0){
+        a.push('<p class="text-xs text-appleGrayText text-center py-8">暫無統計資料</p>');
+      } else {
+        var limit = Math.min(storeLeaderboard.length, 5);
+        for(var i=0;i<limit;i++){
+          var st = storeLeaderboard[i];
+          var pct = Math.round((st.avgMins/maxStoreAvg)*100); if(pct<5) pct=5;
+          a.push('<div>');
+          a.push('<div class="flex justify-between text-xs mb-1 font-bold"><span class="text-appleDarkText truncate">'+st.name+' <span class="text-[10px] font-normal text-appleGrayText">('+st.count+'人)</span></span><span class="text-appleBlue font-mono">'+st.avgMins+' <span class="font-normal text-[10px] text-appleGrayText">分鐘/人</span></span></div>');
+          a.push('<div class="w-full bg-appleBg rounded-full h-2 overflow-hidden border border-appleBorder shadow-inner"><div class="bg-appleBlue h-full rounded-full transition-all duration-700" style="width:'+pct+'%"></div></div>');
+          a.push('</div>');
+        }
+      }
+      a.push('</div></div>');
+
+      // ── 卡片 2：24 小時觀看熱區分佈
+      var hourlyStats = [];
+      for(var h=0;h<24;h++) hourlyStats.push(0);
+      filteredEv.forEach(function(ev){
+        if(ev.createdAt && ev.createdAt.length>=19){
+          var hr = parseInt(ev.createdAt.substring(11,13),10);
+          if(hr>=0 && hr<24) hourlyStats[hr]++;
+        }
+      });
+      var maxHourCount = Math.max.apply(null, hourlyStats) || 1;
+
+      a.push('<div class="bg-appleCard border border-appleBorder rounded-2xl p-5 shadow-xs flex flex-col">');
+      a.push('<h4 class="text-sm font-bold text-appleDarkText mb-1 flex items-center"><i data-lucide="clock" class="w-4 h-4 mr-1.5 text-appleBlue"></i>24 小時學員觀看熱區分佈</h4>');
+      a.push('<p class="text-[10px] text-appleGrayText mb-4">學員主要是在門市上班、通勤、或是睡前觀課時間點分析</p>');
+      a.push('<div class="flex items-end justify-between h-32 pb-1 gap-1 flex-grow">');
+      for(var h=0;h<24;h++){
+        var pct = Math.round((hourlyStats[h]/maxHourCount)*100);
+        var label = h%6===0 ? h+'h' : (h===23?'23h':'');
+        a.push('<div class="flex flex-col items-center flex-1 h-full relative group">');
+        if(hourlyStats[h]>0){
+          a.push('<div class="absolute -top-7 bg-appleDarkText text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none whitespace-nowrap">'+hourlyStats[h]+' 次</div>');
+        }
+        a.push('<div class="w-full bg-appleBg rounded-t-sm flex items-end justify-center h-full"><div class="w-full rounded-t-sm transition-all duration-700 group-hover:opacity-80" style="height:'+pct+'%;background-color:#0071E3;"></div></div>');
+        a.push('<span class="text-[8px] font-black text-appleGrayText mt-1.5">'+label+'</span>');
+        a.push('</div>');
+      }
+      a.push('</div></div>');
+
+      wrapper.innerHTML = a.join('');
       try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
     }
 
