@@ -2445,12 +2445,13 @@
       for(var ii=0;ii<buckets.length;ii++){
         var p=maxB>0?Math.round(buckets[ii]/maxB*100):0;
         var mw=buckets.length>20?'style="min-width:10px"':buckets.length>10?'style="min-width:16px"':'';
-        a2.push('<div class="flex flex-col items-center flex-1 h-full" ' + mw + '>');
+        var tipTxt2=buckets[ii]>0?buckets[ii]+' 分鐘':'0 分鐘';
+        a2.push('<div class="flex flex-col items-center flex-1 h-full relative group" ' + mw + '>');
+        a2.push('<div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-appleDarkText text-white text-[10px] font-bold px-2 py-1 rounded-lg whitespace-nowrap shadow-lg">' + tipTxt2 + '</div>');
         a2.push('<div class="w-full flex flex-col justify-end h-full border-b border-appleBorder">');
-        a2.push('<div class="' + (ii===buckets.length-1?'bg-appleGreen':'bg-appleGreen/35') + ' rounded-t-sm mx-px transition-all duration-700" style="height:' + p + '%"></div>');
+        a2.push('<div class="' + (ii===buckets.length-1?'bg-appleGreen':'bg-appleGreen/35') + ' rounded-t-sm mx-px transition-all duration-700 cursor-default" style="height:' + p + '%"></div>');
         a2.push('</div>');
         a2.push('<span class="text-[9px] font-bold text-appleGrayText mt-1" style="white-space:nowrap">' + (labels[ii]||'') + '</span>');
-        if(buckets[ii]>0) a2.push('<span class="text-[8px] text-appleGreen font-mono">' + buckets[ii] + '</span>');
         a2.push('</div>');
       }
       a2.push('</div></div>');
@@ -2479,9 +2480,10 @@
       var dayNames = ['日','一','二','三','四','五','六'];
       var buckets = [], labels = [];
 
+      var _aLogs = (window.appData.adminWatchLogs||[]).filter(function(l){ return (l.email||'').toLowerCase()===emailL; });
       if (range === 'week') {
         for (var ii=0;ii<7;ii++) { buckets.push(0); var dt=new Date(today); dt.setDate(dt.getDate()-(6-ii)); labels.push(dayNames[dt.getDay()]); }
-        (window.appData.watchLogs||[]).forEach(function(l){
+        _aLogs.forEach(function(l){
           if(!l.lastWatchedAt) return;
           var d=new Date(l.lastWatchedAt.split(' ')[0].replace(/-/g,'/')); d.setHours(0,0,0,0);
           var diff=Math.round((today-d)/86400000);
@@ -2495,7 +2497,7 @@
         });
       } else if (range === 'month') {
         for (var ii=0;ii<30;ii++) { buckets.push(0); var dt=new Date(today); dt.setDate(dt.getDate()-(29-ii)); labels.push(ii%5===0||ii===29?(dt.getMonth()+1)+'/'+dt.getDate():''); }
-        (window.appData.watchLogs||[]).forEach(function(l){
+        _aLogs.forEach(function(l){
           if(!l.lastWatchedAt) return;
           var d=new Date(l.lastWatchedAt.split(' ')[0].replace(/-/g,'/')); d.setHours(0,0,0,0);
           var diff=Math.round((today-d)/86400000);
@@ -2509,7 +2511,7 @@
         });
       } else if (range === 'year') {
         for (var ii=0;ii<12;ii++) { buckets.push(0); var dt=new Date(today.getFullYear(),today.getMonth()-(11-ii),1); labels.push((dt.getMonth()+1)+'月'); }
-        (window.appData.watchLogs||[]).forEach(function(l){
+        _aLogs.forEach(function(l){
           if(!l.lastWatchedAt) return;
           var d=new Date(l.lastWatchedAt.split(' ')[0].replace(/-/g,'/'));
           var mDiff=(today.getFullYear()-d.getFullYear())*12+(today.getMonth()-d.getMonth());
@@ -2564,12 +2566,13 @@
       for (var ii=0;ii<buckets.length;ii++) {
         var pct2=maxB>0?Math.round(buckets[ii]/maxB*100):0;
         var minW=buckets.length>20?'style="min-width:10px"':buckets.length>10?'style="min-width:16px"':'';
-        arr.push('<div class="flex flex-col items-center flex-1 h-full" ' + minW + '>');
+        var tipTxt=buckets[ii]>0?buckets[ii]+' 分鐘':'0 分鐘';
+        arr.push('<div class="flex flex-col items-center flex-1 h-full relative group" ' + minW + '>');
+        arr.push('<div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-appleDarkText text-white text-[10px] font-bold px-2 py-1 rounded-lg whitespace-nowrap shadow-lg">' + tipTxt + '</div>');
         arr.push('<div class="w-full flex flex-col justify-end h-full border-b border-appleBorder">');
-        arr.push('<div class="' + (ii===buckets.length-1?'bg-appleBlue':'bg-appleBlue/35') + ' rounded-t-md mx-px" style="height:' + pct2 + '%"></div>');
+        arr.push('<div class="' + (ii===buckets.length-1?'bg-appleBlue':'bg-appleBlue/35') + ' rounded-t-md mx-px cursor-default" style="height:' + pct2 + '%"></div>');
         arr.push('</div>');
         arr.push('<span class="text-[9px] font-bold text-appleGrayText mt-1" style="white-space:nowrap">' + (labels[ii]||'') + '</span>');
-        if (buckets[ii]>0) arr.push('<span class="text-[8px] text-appleBlue font-mono">' + buckets[ii] + '</span>');
         arr.push('</div>');
       }
       arr.push('</div></div>');
