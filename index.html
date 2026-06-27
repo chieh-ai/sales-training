@@ -2360,24 +2360,45 @@
       var buckets = [], labels = [];
       if (range === 'week') {
         for (var ii=0;ii<7;ii++) { buckets.push(0); var dt=new Date(today); dt.setDate(dt.getDate()-(6-ii)); labels.push(dayNames[dt.getDay()]); }
+        var _actLogs1=(window.appData.adminWatchLogs||[]).filter(function(l){return (l.email||'').toLowerCase()===emailL;});
+        _actLogs1.forEach(function(l){
+          if(!l.lastWatchedAt) return;
+          var d=new Date(l.lastWatchedAt.split(' ')[0].replace(/-/g,'/')); d.setHours(0,0,0,0);
+          var diff=Math.round((today-d)/86400000);
+          if(diff>=0&&diff<=6) buckets[6-diff]+=Math.round((l.watchDuration||0)/60);
+        });
         (window.appData.watchEvents||[]).forEach(function(ev){
-          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          if(!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
           var d=new Date(ev.createdAt.substring(0,10)); d.setHours(0,0,0,0);
           var diff=Math.round((today-d)/86400000);
           if(diff>=0&&diff<=6) buckets[6-diff]+=Math.round((ev.duration||0)/60);
         });
       } else if (range === 'month') {
         for (var ii=0;ii<30;ii++) { buckets.push(0); var dt=new Date(today); dt.setDate(dt.getDate()-(29-ii)); labels.push(ii%5===0||ii===29?(dt.getMonth()+1)+'/'+dt.getDate():''); }
+        var _actLogs2=(window.appData.adminWatchLogs||[]).filter(function(l){return (l.email||'').toLowerCase()===emailL;});
+        _actLogs2.forEach(function(l){
+          if(!l.lastWatchedAt) return;
+          var d=new Date(l.lastWatchedAt.split(' ')[0].replace(/-/g,'/')); d.setHours(0,0,0,0);
+          var diff=Math.round((today-d)/86400000);
+          if(diff>=0&&diff<=29) buckets[29-diff]+=Math.round((l.watchDuration||0)/60);
+        });
         (window.appData.watchEvents||[]).forEach(function(ev){
-          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          if(!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
           var d=new Date(ev.createdAt.substring(0,10)); d.setHours(0,0,0,0);
           var diff=Math.round((today-d)/86400000);
           if(diff>=0&&diff<=29) buckets[29-diff]+=Math.round((ev.duration||0)/60);
         });
       } else if (range === 'year') {
         for (var ii=0;ii<12;ii++) { buckets.push(0); var dt=new Date(today.getFullYear(),today.getMonth()-(11-ii),1); labels.push((dt.getMonth()+1)+'月'); }
+        var _actLogs3=(window.appData.adminWatchLogs||[]).filter(function(l){return (l.email||'').toLowerCase()===emailL;});
+        _actLogs3.forEach(function(l){
+          if(!l.lastWatchedAt) return;
+          var d=new Date(l.lastWatchedAt.split(' ')[0].replace(/-/g,'/'));
+          var mDiff=(today.getFullYear()-d.getFullYear())*12+(today.getMonth()-d.getMonth());
+          if(mDiff>=0&&mDiff<=11) buckets[11-mDiff]+=Math.round((l.watchDuration||0)/60);
+        });
         (window.appData.watchEvents||[]).forEach(function(ev){
-          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          if(!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
           var d=new Date(ev.createdAt.substring(0,10));
           var mDiff=(today.getFullYear()-d.getFullYear())*12+(today.getMonth()-d.getMonth());
           if(mDiff>=0&&mDiff<=11) buckets[11-mDiff]+=Math.round((ev.duration||0)/60);
@@ -2392,8 +2413,14 @@
           var dt=new Date(sd); dt.setDate(dt.getDate()+ii);
           labels.push(days<=14||ii%Math.ceil(days/8)===0||ii===days-1?(dt.getMonth()+1)+'/'+dt.getDate():'');
         }
+        (window.appData.watchLogs||[]).forEach(function(l){
+          if(!l.lastWatchedAt) return;
+          var d=new Date(l.lastWatchedAt.split(' ')[0].replace(/-/g,'/')); d.setHours(0,0,0,0);
+          var diff=Math.round((d-sd)/86400000);
+          if(diff>=0&&diff<days) buckets[diff]+=Math.round((l.watchDuration||0)/60);
+        });
         (window.appData.watchEvents||[]).forEach(function(ev){
-          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          if(!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
           var d=new Date(ev.createdAt.substring(0,10)); d.setHours(0,0,0,0);
           var diff=Math.round((d-sd)/86400000);
           if(diff>=0&&diff<days) buckets[diff]+=Math.round((ev.duration||0)/60);
@@ -2452,24 +2479,42 @@
 
       if (range === 'week') {
         for (var ii=0;ii<7;ii++) { buckets.push(0); var dt=new Date(today); dt.setDate(dt.getDate()-(6-ii)); labels.push(dayNames[dt.getDay()]); }
+        (window.appData.watchLogs||[]).forEach(function(l){
+          if(!l.lastWatchedAt) return;
+          var d=new Date(l.lastWatchedAt.split(' ')[0].replace(/-/g,'/')); d.setHours(0,0,0,0);
+          var diff=Math.round((today-d)/86400000);
+          if(diff>=0&&diff<=6) buckets[6-diff]+=Math.round((l.watchDuration||0)/60);
+        });
         (window.appData.watchEvents||[]).forEach(function(ev){
-          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          if(!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
           var d=new Date(ev.createdAt.substring(0,10)); d.setHours(0,0,0,0);
           var diff=Math.round((today-d)/86400000);
           if(diff>=0&&diff<=6) buckets[6-diff]+=Math.round((ev.duration||0)/60);
         });
       } else if (range === 'month') {
         for (var ii=0;ii<30;ii++) { buckets.push(0); var dt=new Date(today); dt.setDate(dt.getDate()-(29-ii)); labels.push(ii%5===0||ii===29?(dt.getMonth()+1)+'/'+dt.getDate():''); }
+        (window.appData.watchLogs||[]).forEach(function(l){
+          if(!l.lastWatchedAt) return;
+          var d=new Date(l.lastWatchedAt.split(' ')[0].replace(/-/g,'/')); d.setHours(0,0,0,0);
+          var diff=Math.round((today-d)/86400000);
+          if(diff>=0&&diff<=29) buckets[29-diff]+=Math.round((l.watchDuration||0)/60);
+        });
         (window.appData.watchEvents||[]).forEach(function(ev){
-          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          if(!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
           var d=new Date(ev.createdAt.substring(0,10)); d.setHours(0,0,0,0);
           var diff=Math.round((today-d)/86400000);
           if(diff>=0&&diff<=29) buckets[29-diff]+=Math.round((ev.duration||0)/60);
         });
       } else if (range === 'year') {
         for (var ii=0;ii<12;ii++) { buckets.push(0); var dt=new Date(today.getFullYear(),today.getMonth()-(11-ii),1); labels.push((dt.getMonth()+1)+'月'); }
+        (window.appData.watchLogs||[]).forEach(function(l){
+          if(!l.lastWatchedAt) return;
+          var d=new Date(l.lastWatchedAt.split(' ')[0].replace(/-/g,'/'));
+          var mDiff=(today.getFullYear()-d.getFullYear())*12+(today.getMonth()-d.getMonth());
+          if(mDiff>=0&&mDiff<=11) buckets[11-mDiff]+=Math.round((l.watchDuration||0)/60);
+        });
         (window.appData.watchEvents||[]).forEach(function(ev){
-          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          if(!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
           var d=new Date(ev.createdAt.substring(0,10));
           var mDiff=(today.getFullYear()-d.getFullYear())*12+(today.getMonth()-d.getMonth());
           if(mDiff>=0&&mDiff<=11) buckets[11-mDiff]+=Math.round((ev.duration||0)/60);
@@ -2484,8 +2529,15 @@
           var dt=new Date(sd); dt.setDate(dt.getDate()+ii);
           labels.push(days<=14||ii%Math.ceil(days/8)===0||ii===days-1?(dt.getMonth()+1)+'/'+dt.getDate():'');
         }
+        var _actLogs4=(window.appData.adminWatchLogs||[]).filter(function(l){return (l.email||'').toLowerCase()===emailL;});
+        _actLogs4.forEach(function(l){
+          if(!l.lastWatchedAt) return;
+          var d=new Date(l.lastWatchedAt.split(' ')[0].replace(/-/g,'/')); d.setHours(0,0,0,0);
+          var diff=Math.round((d-sd)/86400000);
+          if(diff>=0&&diff<days) buckets[diff]+=Math.round((l.watchDuration||0)/60);
+        });
         (window.appData.watchEvents||[]).forEach(function(ev){
-          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          if(!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
           var d=new Date(ev.createdAt.substring(0,10)); d.setHours(0,0,0,0);
           var diff=Math.round((d-sd)/86400000);
           if(diff>=0&&diff<days) buckets[diff]+=Math.round((ev.duration||0)/60);
