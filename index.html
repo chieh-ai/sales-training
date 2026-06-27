@@ -70,7 +70,7 @@
 
   <!-- =================  頂部導覽列 ================= -->
   <header id="app-header" class="sticky top-0 z-40 bg-appleBg/80 blur-backdrop border-b border-appleBorder/60 px-6 py-4 flex justify-between items-center hidden">
-    <div class="flex items-center"><h1 class="text-xl font-bold tracking-tight text-appleDarkText"> Sales Training</h1></div>
+    <div class="flex items-center cursor-pointer" onclick="switchTab('home')" title="回到首頁"><h1 class="text-xl font-bold tracking-tight text-appleDarkText hover:text-appleBlue transition-colors"> Sales Training</h1></div>
     <div class="flex items-center space-x-1.5 ml-auto mr-3">
       <button type="button" onclick="showChangePassword()" title="修改密碼" class="w-8 h-8 rounded-full flex items-center justify-center text-appleGrayText hover:text-appleBlue hover:bg-appleBlue/10 transition-all active:scale-90"><i data-lucide="key-round" class="w-4 h-4"></i></button>
       <button type="button" onclick="doLogout()" title="登出" class="w-8 h-8 rounded-full flex items-center justify-center text-appleGrayText hover:text-appleDanger hover:bg-appleDanger/10 transition-all active:scale-90"><i data-lucide="log-out" class="w-4 h-4"></i></button>
@@ -2195,6 +2195,7 @@
 
     function buildPersonalPanel(email) {
       var emailL = (email||'').toLowerCase();
+      window.prCurrentEmailL = emailL;
       var user = null;
       for (var i = 0; i < (window.appData.adminUsers||[]).length; i++) {
         if ((window.appData.adminUsers[i].email||'').toLowerCase() === emailL) { user = window.appData.adminUsers[i]; break; }
@@ -2260,8 +2261,8 @@
       arr.push(buildPrStatCard('❤️ 收藏', '共 ' + favIdArr.length + ' 部收藏影片', favIdArr.length, favCompleted, favIdArr.length - favCompleted, favSecs, '#FF3B30', 'text-appleDanger'));
       arr.push('</div>');
 
+      arr.push(buildActivityChart(emailL));
       arr.push(buildProductLineChart(userLogs, videoMap));
-      arr.push(buildWeeklyActivity(emailL));
       arr.push(buildTop3Replay(userLogs, videoMap));
       arr.push('</div>');
       return arr.join('');
@@ -2346,35 +2347,98 @@
       return arr.join('');
     }
 
-    function buildWeeklyActivity(emailL) {
+    function buildActivityChart(emailL) {
+      var range = window.prActivityRange || 'week';
+      var cStart = window.prActivityCustomStart || '';
+      var cEnd   = window.prActivityCustomEnd   || '';
+      var today  = new Date(); today.setHours(0,0,0,0);
       var dayNames = ['日','一','二','三','四','五','六'];
-      var buckets = [0,0,0,0,0,0,0];
-      var today = new Date(); today.setHours(0,0,0,0);
-      (window.appData.watchEvents||[]).forEach(function(ev){
-        if (!ev.createdAt || (ev.email||'').toLowerCase() !== emailL) return;
-        var d = new Date(ev.createdAt.substring(0,10)); d.setHours(0,0,0,0);
-        var diff = Math.round((today - d)/86400000);
-        if (diff >= 0 && diff <= 6) buckets[6-diff] += Math.round((ev.duration||0)/60);
-      });
-      var maxB = Math.max.apply(null, buckets); if (maxB === 0) maxB = 1;
-      var labels = [];
-      for (var i = 0; i < 7; i++) { var d2 = new Date(today); d2.setDate(d2.getDate()-(6-i)); labels.push(dayNames[d2.getDay()]); }
+      var buckets = [], labels = [];
+
+      if (range === 'week') {
+        for (var ii=0;ii<7;ii++) { buckets.push(0); var dt=new Date(today); dt.setDate(dt.getDate()-(6-ii)); labels.push(dayNames[dt.getDay()]); }
+        (window.appData.watchEvents||[]).forEach(function(ev){
+          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          var d=new Date(ev.createdAt.substring(0,10)); d.setHours(0,0,0,0);
+          var diff=Math.round((today-d)/86400000);
+          if(diff>=0&&diff<=6) buckets[6-diff]+=Math.round((ev.duration||0)/60);
+        });
+      } else if (range === 'month') {
+        for (var ii=0;ii<30;ii++) { buckets.push(0); var dt=new Date(today); dt.setDate(dt.getDate()-(29-ii)); labels.push(ii%5===0||ii===29?(dt.getMonth()+1)+'/'+dt.getDate():''); }
+        (window.appData.watchEvents||[]).forEach(function(ev){
+          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          var d=new Date(ev.createdAt.substring(0,10)); d.setHours(0,0,0,0);
+          var diff=Math.round((today-d)/86400000);
+          if(diff>=0&&diff<=29) buckets[29-diff]+=Math.round((ev.duration||0)/60);
+        });
+      } else if (range === 'year') {
+        for (var ii=0;ii<12;ii++) { buckets.push(0); var dt=new Date(today.getFullYear(),today.getMonth()-(11-ii),1); labels.push((dt.getMonth()+1)+'月'); }
+        (window.appData.watchEvents||[]).forEach(function(ev){
+          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          var d=new Date(ev.createdAt.substring(0,10));
+          var mDiff=(today.getFullYear()-d.getFullYear())*12+(today.getMonth()-d.getMonth());
+          if(mDiff>=0&&mDiff<=11) buckets[11-mDiff]+=Math.round((ev.duration||0)/60);
+        });
+      } else {
+        var sd=cStart?new Date(cStart):new Date(today); sd.setHours(0,0,0,0);
+        var ed=cEnd?new Date(cEnd):new Date(today); ed.setHours(0,0,0,0);
+        if(ed<sd){var tmp=sd;sd=ed;ed=tmp;}
+        var days=Math.min(Math.round((ed-sd)/86400000)+1,60);
+        for (var ii=0;ii<days;ii++){
+          buckets.push(0);
+          var dt=new Date(sd); dt.setDate(dt.getDate()+ii);
+          labels.push(days<=14||ii%Math.ceil(days/8)===0||ii===days-1?(dt.getMonth()+1)+'/'+dt.getDate():'');
+        }
+        (window.appData.watchEvents||[]).forEach(function(ev){
+          if (!ev.createdAt||(ev.email||'').toLowerCase()!==emailL) return;
+          var d=new Date(ev.createdAt.substring(0,10)); d.setHours(0,0,0,0);
+          var diff=Math.round((d-sd)/86400000);
+          if(diff>=0&&diff<days) buckets[diff]+=Math.round((ev.duration||0)/60);
+        });
+      }
+
+      var maxB=Math.max.apply(null,buckets.length?buckets:[0]); if(maxB===0) maxB=1;
+      var rangeOpts=[{k:'week',l:'週'},{k:'month',l:'月'},{k:'year',l:'年'},{k:'custom',l:'自訂'}];
+      var btnHtml=rangeOpts.map(function(r){
+        var active=range===r.k;
+        var cls=active?'px-2.5 py-0.5 rounded-lg text-xs font-bold bg-appleBlue text-white':'px-2.5 py-0.5 rounded-lg text-xs font-bold text-appleGrayText hover:bg-appleBorder/60 transition-colors';
+        return '<button type="button" onclick="prSetActivityRange(\'' + r.k + '\')" class="' + cls + '">' + r.l + '</button>';
+      }).join('');
+
       var arr = [];
-      arr.push('<div class="bg-appleBg rounded-2xl border border-appleBorder p-4">');
-      arr.push('<h4 class="text-sm font-bold text-appleDarkText mb-4 flex items-center"><i data-lucide="activity" class="w-4 h-4 mr-1.5 text-appleGreen"></i>本週學習活躍度（分鐘）</h4>');
-      arr.push('<div class="flex items-end justify-between h-32 gap-2 pb-1">');
-      for (var i = 0; i < 7; i++) {
-        var pct2 = Math.round(buckets[i]/maxB*100);
-        arr.push('<div class="flex flex-col items-center flex-1 h-full">');
+      arr.push('<div id="pr-activity-wrap" class="bg-appleBg rounded-2xl border border-appleBorder p-4">');
+      arr.push('<div class="flex items-center justify-between mb-3"><h4 class="text-sm font-bold text-appleDarkText flex items-center"><i data-lucide="activity" class="w-4 h-4 mr-1.5 text-appleGreen"></i>學習活躍度</h4><div class="flex items-center gap-1">' + btnHtml + '</div></div>');
+      if (range === 'custom') {
+        arr.push('<div class="flex items-center gap-2 mb-3"><input type="date" id="pr-act-start" value="' + cStart + '" onchange="window.prActivityCustomStart=this.value;prRefreshActivity()" class="text-xs border border-appleBorder rounded-lg px-2 py-1 bg-white flex-1"><span class="text-xs text-appleGrayText">至</span><input type="date" id="pr-act-end" value="' + cEnd + '" onchange="window.prActivityCustomEnd=this.value;prRefreshActivity()" class="text-xs border border-appleBorder rounded-lg px-2 py-1 bg-white flex-1"></div>');
+      }
+      arr.push('<div class="flex items-end justify-between h-28 gap-px pb-1">');
+      for (var ii=0;ii<buckets.length;ii++) {
+        var pct2=maxB>0?Math.round(buckets[ii]/maxB*100):0;
+        var minW=buckets.length>20?'style="min-width:10px"':buckets.length>10?'style="min-width:16px"':'';
+        arr.push('<div class="flex flex-col items-center flex-1 h-full" ' + minW + '>');
         arr.push('<div class="w-full flex flex-col justify-end h-full border-b border-appleBorder">');
-        arr.push('<div class="' + (i===6?'bg-appleBlue':'bg-appleBlue/35') + ' rounded-t-md mx-px" style="height:' + pct2 + '%"></div>');
+        arr.push('<div class="' + (ii===buckets.length-1?'bg-appleBlue':'bg-appleBlue/35') + ' rounded-t-md mx-px" style="height:' + pct2 + '%"></div>');
         arr.push('</div>');
-        arr.push('<span class="text-[10px] font-bold text-appleGrayText mt-1.5">' + labels[i] + '</span>');
-        if (buckets[i] > 0) arr.push('<span class="text-[9px] text-appleBlue font-mono">' + buckets[i] + '</span>');
+        arr.push('<span class="text-[9px] font-bold text-appleGrayText mt-1" style="white-space:nowrap">' + (labels[ii]||'') + '</span>');
+        if (buckets[ii]>0) arr.push('<span class="text-[8px] text-appleBlue font-mono">' + buckets[ii] + '</span>');
         arr.push('</div>');
       }
       arr.push('</div></div>');
       return arr.join('');
+    }
+
+    function prSetActivityRange(range) {
+      window.prActivityRange = range;
+      prRefreshActivity();
+    }
+
+    function prRefreshActivity() {
+      var wrap = document.getElementById('pr-activity-wrap');
+      if (!wrap) return;
+      var tmp = document.createElement('div');
+      tmp.innerHTML = buildActivityChart(window.prCurrentEmailL || '');
+      wrap.parentNode.replaceChild(tmp.firstChild, wrap);
+      try { if(typeof lucide!=='undefined') lucide.createIcons(); } catch(e) {}
     }
 
     function buildTop3Replay(userLogs, videoMap) {
