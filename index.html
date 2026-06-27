@@ -2259,9 +2259,11 @@
       arr.push(buildPrStatCard('❤️ 收藏', '共 ' + favIdArr.length + ' 部收藏影片', favIdArr.length, favCompleted, favIdArr.length - favCompleted, favSecs, '#FF3B30', 'text-appleDanger'));
       arr.push('</div>');
 
+      arr.push('<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-4">');
       arr.push(buildActivityChart(emailL));
       arr.push(buildProductLineChart(userLogs, videoMap));
       arr.push(buildTop3Replay(userLogs, videoMap));
+      arr.push('</div>');
       arr.push('</div>');
       return arr.join('');
     }
@@ -2539,7 +2541,7 @@
       var medals = ['🥇','🥈','🥉'];
       var arr = [];
       arr.push('<div class="bg-appleBg rounded-2xl border border-appleBorder p-4">');
-      arr.push('<h4 class="text-sm font-bold text-appleDarkText mb-4 flex items-center"><i data-lucide="repeat" class="w-4 h-4 mr-1.5 text-appleBlue"></i>最長重複觀看 Top 3</h4>');
+      arr.push('<h4 class="text-sm font-bold text-appleDarkText mb-4 flex items-center"><i data-lucide="repeat" class="w-4 h-4 mr-1.5 text-appleBlue"></i>最常重複觀看 Top 3</h4>');
       if (sorted.length === 0) {
         arr.push('<p class="text-xs text-appleGrayText text-center py-4">尚無觀看紀錄</p>');
       } else {
