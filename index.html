@@ -376,7 +376,7 @@
     // ==========================================
     //  ★ 設定：部署後請將下方網址換成你的 GAS /exec URL ★
     // ==========================================
-    var GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxllF5a8TLkZHjdpNCHXg9HPnkfqolraxrXekXqipTPq98PfBydeQuUjNcsQoOvCiKJyQ/exec';
+    var GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwVkI54zZVwNwH-jODk-uP_JjsdA4sQ5L2uWqKW1YYrdXq4omCOt6KGdJR-qVbT4_EhwQ/exec';
     // 登入憑證（頁面重新整理即清除，不存入任何 Storage）
     window.appCredentials = { email: '', password: '' };
 
@@ -592,6 +592,8 @@
       try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
     }
 
+    function closeCpOverlay() { var e = document.getElementById('cp-overlay'); if(e) e.remove(); }
+
     function showChangePassword() {
       var existing = document.getElementById('cp-overlay');
       if (existing) existing.remove();
@@ -603,7 +605,7 @@
         '<div class="bg-white border border-appleBorder rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">',
         '  <div class="flex items-center justify-between mb-1">',
         '    <h3 class="text-base font-bold text-appleDarkText flex items-center gap-2"><i data-lucide="key-round" class="w-4 h-4 text-appleBlue"></i>修改密碼</h3>',
-        '    <button type="button" onclick="document.getElementById('cp-overlay').remove()" class="w-7 h-7 rounded-full flex items-center justify-center text-appleGrayText hover:bg-appleBorder/60 transition-all"><i data-lucide="x" class="w-4 h-4"></i></button>',
+        '    <button type="button" onclick="closeCpOverlay()" class="w-7 h-7 rounded-full flex items-center justify-center text-appleGrayText hover:bg-appleBorder/60 transition-all"><i data-lucide="x" class="w-4 h-4"></i></button>',
         '  </div>',
         '  <div class="space-y-3">',
         '    <div>',
