@@ -79,7 +79,6 @@
       <div class="w-8 h-8 rounded-full bg-appleBlue/10 flex items-center justify-center shrink-0"><i data-lucide="user" class="w-4 h-4 text-appleBlue"></i></div>
       <div class="text-right">
         <p class="text-xs font-bold text-appleDarkText" id="header-user-name">載入中...</p>
-        <p class="text-[10px] text-appleGrayText" id="header-user-email">請稍候</p>
         <p class="text-[10px] text-appleBlue font-bold mt-0.5" id="header-user-store"></p>
       </div>
     </div>
@@ -498,6 +497,8 @@
       document.getElementById('login-loading').classList.add('flex');
 
       window.appCredentials = { email: email, password: password };
+      sessionStorage.setItem('st_e', email);
+      sessionStorage.setItem('st_p', password);
 
       callAPI('login', {})
         .then(function(response) {
@@ -544,12 +545,20 @@
       if (pwdEl)   pwdEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
       if (emailEl) emailEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') { var p = document.getElementById('login-password'); if(p) p.focus(); } });
       try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+      // 自動還原登入狀態（重整後仍保持登入）
+      var _se = sessionStorage.getItem('st_e'), _sp = sessionStorage.getItem('st_p');
+      if (_se && _sp) {
+        var _emailEl = document.getElementById('login-email');
+        var _pwdEl   = document.getElementById('login-password');
+        if (_emailEl) _emailEl.value = _se;
+        if (_pwdEl)   _pwdEl.value   = _sp;
+        setTimeout(function(){ doLogin(); }, 100);
+      }
     });
 
     function initUI() {
       var u = window.appData.user;
       document.getElementById('header-user-name').innerText = u.name + ' | ' + u.storeRole;
-      document.getElementById('header-user-email').innerText = u.email;
       var storeEl = document.getElementById('header-user-store');
       if(storeEl) storeEl.innerText = u.storeName ? u.storeName : '未指定門市';
 
@@ -581,6 +590,7 @@
     //  登出 / 修改密碼
     // ==========================================
     function doLogout() {
+      sessionStorage.removeItem('st_e'); sessionStorage.removeItem('st_p');
       window.appCredentials = { email: '', password: '' };
       window.appData = { user: null, categories: [], subCategories: [], videos: [], favorites: [], roles: [], channelCategories: [], channelNames: [], storeNames: [], adminUsers: [], playlists: [], watchLogs: [], adminWatchLogs: [], watchEvents: [], adminFavorites: [] };
       if (typeof window.prState !== 'undefined') window.prState = { channel: '', store: '', nameQ: '', selectedEmail: '' };
@@ -653,6 +663,7 @@
             return;
           }
           window.appCredentials.password = np;
+          sessionStorage.setItem('st_p', np);
           var overlay = document.getElementById('cp-overlay');
           if (overlay) overlay.remove();
           var toast = document.createElement('div');
