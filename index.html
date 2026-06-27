@@ -572,6 +572,9 @@
       var _tabAdminBtn = document.getElementById('tab-admin');
       if (_tabAdminBtn) _tabAdminBtn.style.display = _isAdmin ? '' : 'none';
       try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
+      // 登入後預設顯示影片首頁，並捲到最上方
+      switchTab('home');
+      window.scrollTo(0, 0);
     }
 
     // ==========================================
@@ -613,7 +616,7 @@
         '  <div class="space-y-3">',
         '    <div>',
         '      <label class="text-xs font-bold text-appleGrayText block mb-1">新密碼</label>',
-        '      <input type="password" id="cp-new" placeholder="請輸入新密碼（至少 4 碼）" class="w-full bg-appleBg border border-appleBorder rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30">',
+        '      <input type="password" id="cp-new" placeholder="至少 8 碼，需含英文字母與數字" class="w-full bg-appleBg border border-appleBorder rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30">',
         '    </div>',
         '    <div>',
         '      <label class="text-xs font-bold text-appleGrayText block mb-1">確認新密碼</label>',
@@ -636,7 +639,9 @@
       var btn = document.getElementById('cp-submit-btn');
       errEl.classList.add('hidden');
       if (!np) { errEl.innerText = '請輸入新密碼'; errEl.classList.remove('hidden'); return; }
-      if (np.length < 4) { errEl.innerText = '密碼長度至少 4 碼'; errEl.classList.remove('hidden'); return; }
+      if (np.length < 8) { errEl.innerText = '密碼長度至少 8 碼'; errEl.classList.remove('hidden'); return; }
+      if (!/[a-zA-Z]/.test(np)) { errEl.innerText = '密碼須包含至少一個英文字母'; errEl.classList.remove('hidden'); return; }
+      if (!/[0-9]/.test(np)) { errEl.innerText = '密碼須包含至少一個數字'; errEl.classList.remove('hidden'); return; }
       if (np !== cp) { errEl.innerText = '兩次密碼不一致，請重新輸入'; errEl.classList.remove('hidden'); return; }
       if (btn) { btn.disabled = true; btn.innerHTML = '<span class="text-sm">更新中...</span>'; }
       callAPI('changePassword', { newPassword: np })
@@ -991,11 +996,13 @@
         renderAdminDashboard();
         renderAdminVideoList(); renderAdminUserList(); renderAdminPlaylistList();
       }
-      if (tabId === 'progress') { renderProgressList(); }
+      if (tabId === 'progress') { switchProgressTab('dashboard'); }
+      window.scrollTo(0, 0);
     }
 
     function switchProgressTab(tabName) {
       window.progressTab = tabName; window.progressCurrentPage = 1;
+      window.scrollTo(0, 0);
       var tabs = ['dashboard', 'required', 'overview', 'favorites'];
       
       for(var i = 0; i < tabs.length; i++) {

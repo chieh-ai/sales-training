@@ -97,7 +97,8 @@ function validateUser(email, password) {
 // ==========================================
 function changePasswordFn(email, newPassword) {
   try {
-    if (!newPassword || String(newPassword).length < 4) return { status: 'error', message: '密碼長度至少 4 碼' };
+    if (!newPassword || String(newPassword).length < 8) return { status: 'error', message: '密碼長度至少 8 碼，需含英文字母與數字' };
+    if (!/[a-zA-Z]/.test(String(newPassword)) || !/[0-9]/.test(String(newPassword))) return { status: 'error', message: '密碼須包含至少一個英文字母與一個數字' };
     upsertRow("Users", "Email", email, { "Password": String(newPassword) });
     return { status: 'success' };
   } catch(e) { return { status: 'error', message: e.message }; }
