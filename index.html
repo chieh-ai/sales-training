@@ -987,10 +987,9 @@
       var activeBtn = document.getElementById('tab-' + tabId); var activeSec = document.getElementById('section-' + tabId);
       if(activeBtn) activeBtn.classList.add('text-appleBlue'); if(activeSec) activeSec.classList.remove('hidden');
 
-      if (tabId === 'admin') { 
-        initAdminFilters(); 
-        renderAdminDashboard(); 
-        renderAdminVideoList(); renderAdminUserList(); renderAdminPlaylistList(); 
+      if (tabId === 'admin') {
+        renderAdminDashboard();
+        renderAdminVideoList(); renderAdminUserList(); renderAdminPlaylistList();
       }
       if (tabId === 'progress') { renderProgressList(); }
     }
