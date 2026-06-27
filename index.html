@@ -602,8 +602,9 @@
       var _tabAdminBtn = document.getElementById('tab-admin');
       if (_tabAdminBtn) _tabAdminBtn.style.display = _isAdmin ? '' : 'none';
       try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
-      // 登入後預設顯示影片首頁，並捲到最上方
-      switchTab('home');
+      // 還原上次所在頁籤（重整後保留位置），預設 home
+      var _restoredTab = sessionStorage.getItem('st_tab') || 'home';
+      switchTab(_restoredTab, true);
       window.scrollTo(0, 0);
     }
 
@@ -1119,7 +1120,7 @@
     // ==========================================
     //  導覽切換與進度頁面
     // ==========================================
-    function switchTab(tabId) {
+    function switchTab(tabId, _skipSave) {
       // 權限防護：直接呼叫 switchTab('admin') 也需驗證
       if (tabId === 'admin') {
         var _u = window.appData && window.appData.user;
@@ -1138,12 +1139,14 @@
         renderAdminDashboard();
         renderAdminVideoList(); renderAdminUserList(); renderAdminPlaylistList();
       }
-      if (tabId === 'progress') { switchProgressTab('dashboard'); }
+      if (tabId === 'progress') { switchProgressTab(sessionStorage.getItem('st_ptab') || 'dashboard'); }
+      if (!_skipSave) sessionStorage.setItem('st_tab', tabId);
       window.scrollTo(0, 0);
     }
 
     function switchProgressTab(tabName) {
       window.progressTab = tabName; window.progressCurrentPage = 1;
+      sessionStorage.setItem('st_ptab', tabName);
       window.scrollTo(0, 0);
       var tabs = ['dashboard', 'required', 'overview', 'favorites'];
       
