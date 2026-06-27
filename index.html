@@ -666,48 +666,54 @@
 
       var html = [
         '<div id="profile-overlay" class="fixed inset-0 z-50 flex items-start justify-end p-4 pt-16" style="pointer-events:none">',
-        '<div class="bg-white border border-appleBorder rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4" style="pointer-events:auto">',
+        '<div class="bg-white border border-appleBorder rounded-2xl shadow-2xl w-full max-w-xs p-5 space-y-4" style="pointer-events:auto">',
 
         // 標題列
         '<div class="flex items-center justify-between">',
-        '  <h3 class="text-sm font-bold text-appleDarkText flex items-center gap-2"><i data-lucide="user-circle" class="w-4 h-4 text-appleBlue"></i>個人資料</h3>',
+        '  <h3 class="text-base font-bold text-appleDarkText flex items-center gap-2"><i data-lucide="user-circle" class="w-5 h-5 text-appleBlue"></i>個人資料</h3>',
         '  <button type="button" onclick="document.getElementById(\'profile-overlay\').remove()" class="w-7 h-7 rounded-full flex items-center justify-center text-appleGrayText hover:bg-appleBorder/60 transition-all"><i data-lucide="x" class="w-4 h-4"></i></button>',
         '</div>',
 
-        // 第一行：頭像 + 姓名 + Email 膠囊 + 等級
+        // 第一行：頭像 + 姓名 + Email + 等級
         '<div class="flex items-center gap-3">',
-        '  <div class="w-11 h-11 rounded-2xl bg-appleBlue/10 flex items-center justify-center shrink-0"><i data-lucide="user" class="w-5 h-5 text-appleBlue"></i></div>',
+        '  <div class="w-12 h-12 rounded-2xl bg-appleBlue/10 flex items-center justify-center shrink-0"><i data-lucide="user" class="w-6 h-6 text-appleBlue"></i></div>',
         '  <div class="min-w-0 flex-1">',
         '    <div class="flex items-center gap-2 flex-wrap">',
-        '      <span class="text-base font-black text-appleDarkText">' + esc(u.name||'—') + '</span>',
-        '      <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-appleCard border border-appleBorder text-appleGrayText"><i data-lucide="mail" class="w-3 h-3"></i>' + esc(u.email||'—') + '</span>',
-        '      <span class="text-[11px] font-black px-2 py-0.5 rounded-full ' + lvlColor + '">' + esc(u.level||'L0') + '</span>',
+        '      <span class="text-lg font-black text-appleDarkText">' + esc(u.name||'—') + '</span>',
+        '      <span class="text-sm font-black px-2.5 py-0.5 rounded-full ' + lvlColor + '">' + esc(u.level||'L0') + '</span>',
         '    </div>',
+        '    <p class="text-xs text-appleGrayText mt-0.5 break-all">' + esc(u.email||'—') + '</p>',
         '  </div>',
         '</div>',
 
         // 第二行：通路、門市、職稱、年資
-        '<div class="flex flex-wrap gap-1.5">'
+        '<div class="flex flex-wrap gap-2">'
       ];
 
       [['building-2', u.channelName||'—'], ['store', u.storeName||'—'], ['badge-check', u.storeRole||'—'], ['calendar', tenureStr]].forEach(function(t){
-        html.push('<div class="flex items-center gap-1.5 bg-appleCard border border-appleBorder rounded-xl px-2.5 py-1"><i data-lucide="'+t[0]+'" class="w-3 h-3 text-appleGrayText shrink-0"></i><span class="text-xs font-bold text-appleDarkText">'+esc(t[1])+'</span></div>');
+        html.push('<div class="flex items-center gap-1.5 bg-appleCard border border-appleBorder rounded-xl px-3 py-1.5"><i data-lucide="'+t[0]+'" class="w-3.5 h-3.5 text-appleGrayText shrink-0"></i><span class="text-sm font-bold text-appleDarkText">'+esc(t[1])+'</span></div>');
       });
       html.push('</div>');
 
-      // 第三行：原廠角色 + 原廠檢定（同一列）
-      if (roleLabels.length > 0 || certItems.length > 0) {
-        html.push('<div class="flex flex-wrap gap-1.5">');
+      // 第三行：原廠角色（藍色膠囊）
+      if (roleLabels.length > 0) {
+        html.push('<div class="flex flex-wrap gap-2">');
         roleLabels.forEach(function(l){
-          html.push('<span class="inline-flex items-center text-[11px] font-bold px-2.5 py-1 rounded-xl bg-appleBlue/10 text-appleBlue border border-appleBlue/20">'+esc(l)+'</span>');
+          html.push('<span class="inline-flex items-center text-sm font-bold px-3 py-1.5 rounded-xl bg-appleBlue/10 text-appleBlue border border-appleBlue/20">'+esc(l)+'</span>');
         });
+        html.push('</div>');
+      }
+
+      // 第四行：原廠檢定（含有效/失效）
+      if (certItems.length > 0) {
+        html.push('<div class="flex flex-wrap gap-2">');
         certItems.forEach(function(c){
           var label = certOptMap[c.code] || c.code;
           var isValid = c.validity !== '失效';
           var badge = isValid
-            ? '<span class="text-[9px] font-black text-appleGreen bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full ml-1">有效</span>'
-            : '<span class="text-[9px] font-black text-appleGrayText bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-full ml-1">失效</span>';
-          html.push('<span class="inline-flex items-center text-[11px] font-bold px-2.5 py-1 rounded-xl bg-appleCard border border-appleBorder text-appleDarkText">'+esc(label)+badge+'</span>');
+            ? '<span class="text-[11px] font-black text-appleGreen bg-green-50 border border-green-200 px-2 py-0.5 rounded-full ml-1.5">有效</span>'
+            : '<span class="text-[11px] font-black text-appleGrayText bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full ml-1.5">失效</span>';
+          html.push('<span class="inline-flex items-center text-sm font-bold px-3 py-1.5 rounded-xl bg-appleCard border border-appleBorder text-appleDarkText">'+esc(label)+badge+'</span>');
         });
         html.push('</div>');
       }
