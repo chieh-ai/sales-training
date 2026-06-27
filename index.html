@@ -2261,7 +2261,7 @@
 
       arr.push('<div class="bg-appleBg rounded-2xl border border-appleBorder px-5 py-4 space-y-3">');
 
-      // 第一行：頭像 + 姓名 + Email膠囊 + 等級 + 職稱
+      // 第一行：頭像 + 姓名 + Email膠囊 + 等級
       arr.push('<div class="flex items-center gap-3">');
       arr.push('<div class="w-12 h-12 rounded-2xl bg-appleBlue/10 flex items-center justify-center shrink-0"><i data-lucide="user" class="w-6 h-6 text-appleBlue"></i></div>');
       arr.push('<div class="min-w-0 flex-1">');
@@ -2270,10 +2270,9 @@
       arr.push('<span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-appleCard border border-appleBorder text-appleGrayText"><i data-lucide="mail" class="w-3 h-3"></i>' + prEscHtml(user.email||'—') + '</span>');
       arr.push('<span class="text-[11px] font-black px-2 py-0.5 rounded-full ' + lvlColor + '">' + prEscHtml(user.level||'L0') + '</span>');
       arr.push('</div>');
-      arr.push('<p class="text-xs text-appleGrayText mt-0.5">' + prEscHtml(user.storeRole||'—') + '</p>');
       arr.push('</div></div>');
 
-      // 第二行：通路、門市、年資 + 原廠角色膠囊
+      // 第二行：通路、門市、年資 + 職稱
       arr.push('<div class="flex flex-wrap gap-2">');
       [['building-2', user.channelName||'—'], ['store', user.storeName||'—'], ['calendar', tenureStr]].forEach(function(t){
         arr.push('<div class="flex items-center gap-1.5 bg-appleCard border border-appleBorder rounded-xl px-3 py-1.5">');
@@ -2281,14 +2280,20 @@
         arr.push('<span class="text-xs font-bold text-appleDarkText">' + prEscHtml(t[1]) + '</span>');
         arr.push('</div>');
       });
-      roleLabels.forEach(function(l){
-        arr.push('<span class="inline-flex items-center text-[11px] font-bold px-2.5 py-1.5 rounded-xl bg-appleBlue/10 text-appleBlue border border-appleBlue/20">' + prEscHtml(l) + '</span>');
-      });
+      if (user.storeRole) {
+        arr.push('<div class="flex items-center gap-1.5 bg-appleCard border border-appleBorder rounded-xl px-3 py-1.5">');
+        arr.push('<i data-lucide="badge-check" class="w-3.5 h-3.5 text-appleGrayText shrink-0"></i>');
+        arr.push('<span class="text-xs font-bold text-appleDarkText">' + prEscHtml(user.storeRole) + '</span>');
+        arr.push('</div>');
+      }
       arr.push('</div>');
 
-      // 第三行：原廠檢定膠囊（含有效/失效）
-      if (certItems.length > 0) {
+      // 第三行：原廠角色膠囊 + 原廠檢定膠囊（同一列）
+      if (roleLabels.length > 0 || certItems.length > 0) {
         arr.push('<div class="flex flex-wrap gap-2">');
+        roleLabels.forEach(function(l){
+          arr.push('<span class="inline-flex items-center text-[11px] font-bold px-2.5 py-1.5 rounded-xl bg-appleBlue/10 text-appleBlue border border-appleBlue/20">' + prEscHtml(l) + '</span>');
+        });
         certItems.forEach(function(c){
           var label = certOptMap[c.code] || c.code;
           var isValid = c.validity !== '失效';
