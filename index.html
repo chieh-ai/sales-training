@@ -3290,7 +3290,7 @@
             document.getElementById('admin-user-email').value = user.email; document.getElementById('admin-user-email').disabled = true;
             document.getElementById('admin-user-password').value = user.password || 'abcd1234'; 
             document.getElementById('admin-user-name').value = user.name;
-            document.getElementById('admin-user-hiredate').value = user.hireDate;
+            document.getElementById('admin-user-hiredate').value = (user.hireDate || '').slice(0, 10).replace(/\//g, '-');
             document.getElementById('admin-user-nickname').value = user.nickname || '';
             document.getElementById('admin-user-phone').value = user.phone || '';
             document.getElementById('admin-user-appleid').value = user.appleId || '';

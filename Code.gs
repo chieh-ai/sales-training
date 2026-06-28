@@ -281,7 +281,7 @@ function getInitialDataForUser(activeEmail, userRow) {
   var adminUsersFormatted = [];
   for (var i = 0; i < users.length; i++) {
     adminUsersFormatted.push({
-      email: users[i].Email, name: users[i].Name,
+      email: users[i].Email, name: users[i].Name, password: users[i].Password || '',
       channelCategory: users[i].ChannelCategory, channelName: users[i].ChannelName,
       storeName: users[i].StoreName, storeRole: users[i].StoreRole,
       level: users[i].Level, hireDate: users[i].HireDate,
