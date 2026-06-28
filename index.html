@@ -1704,7 +1704,7 @@
       }
 
       if (viewName === 'dashboard') { renderAdminDashboard(); }
-      if (viewName === 'video') { renderAdminVideoList(); }
+      if (viewName === 'video') { populateAdminFilterCategory(); renderAdminVideoList(); }
       if (viewName === 'playlist') { renderAdminPlaylistList(); }
       if (viewName === 'user') { renderAdminUserList(); }
     }
@@ -2913,7 +2913,34 @@
     //  後台邏輯 (A. 影片維護 CRUD)
     // ==========================================
     function changeAdminPage(delta) { window.adminCurrentPage += delta; renderAdminVideoList(); }
-    
+
+    function populateAdminFilterCategory() {
+      var sel = document.getElementById('admin-filter-category');
+      if (!sel) return;
+      var opts = ['<option value="ALL">ALL</option>'];
+      for (var i = 0; i < window.appData.categories.length; i++) {
+        opts.push('<option value="' + window.appData.categories[i] + '">' + window.appData.categories[i] + '</option>');
+      }
+      sel.innerHTML = opts.join('');
+      sel.value = window.adminCategory || 'ALL';
+      updateAdminFilterSubCategoryOptions();
+    }
+
+    function updateAdminFilterSubCategoryOptions() {
+      var sel = document.getElementById('admin-filter-subcategory');
+      if (!sel) return;
+      var opts = ['<option value="ALL">ALL</option>'];
+      var cat = window.adminCategory || 'ALL';
+      for (var i = 0; i < window.appData.subCategories.length; i++) {
+        var sc = window.appData.subCategories[i];
+        if (cat === 'ALL' || sc.parent === cat) {
+          opts.push('<option value="' + sc.name + '">' + sc.name + '</option>');
+        }
+      }
+      sel.innerHTML = opts.join('');
+      sel.value = window.adminSubCategory || 'ALL';
+    }
+
     function renderAdminVideoList() {
       var tbody = document.getElementById('admin-video-table-body');
       var filtered = [];
