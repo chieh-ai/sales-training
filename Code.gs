@@ -185,7 +185,13 @@ function getInitialDataForUser(activeEmail, userRow) {
     email: userRow.Email, name: userRow.Name,
     channelCategory: userRow.ChannelCategory, channelName: userRow.ChannelName,
     storeName: userRow.StoreName, storeRole: userRow.StoreRole,
-    level: userRow.Level || 'L0'
+    level: userRow.Level || 'L0',
+    hireDate: userRow.HireDate || '',
+    factoryRoles: userRow.FactoryRoles || '',
+    certifications: userRow.Certifications || '',
+    nickname: userRow.Nickname || '',
+    phone: userRow.Phone || '',
+    appleId: userRow.AppleID || ''
   };
 
   var formattedVideos = [];
@@ -280,7 +286,10 @@ function getInitialDataForUser(activeEmail, userRow) {
       storeName: users[i].StoreName, storeRole: users[i].StoreRole,
       level: users[i].Level, hireDate: users[i].HireDate,
       factoryRoles: users[i].FactoryRoles || '',
-      certifications: users[i].Certifications || ''  
+      certifications: users[i].Certifications || '',
+      nickname: users[i].Nickname || '',
+      phone: users[i].Phone || '',
+      appleId: users[i].AppleID || ''
     });
   }
 
@@ -491,7 +500,10 @@ function saveAdminUser(email, data) {
       "ChannelName": data.channelName, "StoreName": data.storeName,
       "StoreRole": data.storeRole, "Level": data.level,
       "FactoryRoles": String(data.factoryRoles || ''),
-      "Certifications": String(data.certifications || '')
+      "Certifications": String(data.certifications || ''),
+      "Nickname": String(data.nickname || ''),
+      "Phone": String(data.phone || ''),
+      "AppleID": String(data.appleId || '')
     });
     return { status: 'success' };
   } catch(e) { return { status: 'error', message: e.message }; }

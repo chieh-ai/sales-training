@@ -364,6 +364,11 @@
           <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">姓名 (Name)<span class="text-appleDanger ml-1">*</span></label><input type="text" id="admin-user-name" placeholder="請輸入姓名" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm"></div>
           <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">到職日 (HireDate)</label><input type="date" id="admin-user-hiredate" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm"></div>
         </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">暱稱 (Nickname)</label><input type="text" id="admin-user-nickname" placeholder="請輸入暱稱" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm"></div>
+          <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">電話 (Phone)</label><input type="tel" id="admin-user-phone" placeholder="0912345678" maxlength="10" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm"><p class="text-[10px] text-appleGrayText mt-1.5 ml-1">09 開頭共 10 碼，選填。</p></div>
+        </div>
+        <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">Apple 帳號 (AppleID)</label><input type="email" id="admin-user-appleid" placeholder="example@icloud.com" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm"></div>
         <div class="p-4 bg-appleCard border border-appleBorder rounded-xl shadow-sm space-y-4">
           <div class="flex items-center space-x-2 mb-2"><i data-lucide="map-pin" class="w-4 h-4 text-appleBlue"></i><h4 class="text-sm font-bold text-appleDarkText">組織歸屬 (連動選單)</h4></div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -398,7 +403,7 @@
     // ==========================================
     //  ★ 設定：部署後請將下方網址換成你的 GAS /exec URL ★
     // ==========================================
-    var GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxGxRmJ0yci-TPhgfIz0jXof5hjeegQhmFFy7mKWrWp4X5G6_Z6aY81Hbq0479lNkEF-w/exec';
+    var GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzCvX70zf-KLbwkSz8wHS4xkgxKXhRWBfkRtdoiudiPiFanlnUqdA-BMyE_V_Gu7zL52w/exec';
     // 登入憑證（頁面重新整理即清除，不存入任何 Storage）
     window.appCredentials = { email: '', password: '' };
 
@@ -3284,9 +3289,12 @@
             document.getElementById('admin-user-modal-title').innerText = "編輯帳號資訊"; 
             document.getElementById('admin-user-email').value = user.email; document.getElementById('admin-user-email').disabled = true;
             document.getElementById('admin-user-password').value = user.password || 'abcd1234'; 
-            document.getElementById('admin-user-name').value = user.name; 
+            document.getElementById('admin-user-name').value = user.name;
             document.getElementById('admin-user-hiredate').value = user.hireDate;
-            document.getElementById('admin-user-channelcategory').value = user.channelCategory; 
+            document.getElementById('admin-user-nickname').value = user.nickname || '';
+            document.getElementById('admin-user-phone').value = user.phone || '';
+            document.getElementById('admin-user-appleid').value = user.appleId || '';
+            document.getElementById('admin-user-channelcategory').value = user.channelCategory;
             onAdminUserCategoryChange(user.channelName); onAdminUserChannelChange(user.storeName);
             document.getElementById('admin-user-storerole').value = user.storeRole;
             var lvlRadios = document.getElementsByName('adminUserLevel');
@@ -3299,6 +3307,9 @@
           document.getElementById('admin-user-email').value = ''; document.getElementById('admin-user-email').disabled = false;
           document.getElementById('admin-user-password').value = 'abcd1234'; document.getElementById('admin-user-name').value = '';
           document.getElementById('admin-user-hiredate').value = '';
+          document.getElementById('admin-user-nickname').value = '';
+          document.getElementById('admin-user-phone').value = '';
+          document.getElementById('admin-user-appleid').value = '';
           document.getElementById('admin-user-channelcategory').value = ''; onAdminUserCategoryChange();
           document.getElementById('admin-user-storerole').value = '';
           document.getElementsByName('adminUserLevel')[0].checked = true;
@@ -3396,8 +3407,12 @@
       if(!email || !password || !name) return alert("資料填寫不完整！");
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert("Email 格式錯誤！");
       if (password.length < 8) return alert("密碼最少 8 碼！");
+      var phone = document.getElementById('admin-user-phone').value.trim();
+      if (phone && !/^09\d{8}$/.test(phone)) return alert("電話格式錯誤！請輸入 09 開頭的 10 碼手機號碼。");
+      var appleId = document.getElementById('admin-user-appleid').value.trim();
+      if (appleId && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(appleId)) return alert("Apple 帳號格式錯誤！請輸入正確的電子郵件格式。");
       var selectedLevel = 'L0'; var lvlRadios = document.getElementsByName('adminUserLevel'); for(var i=0; i<lvlRadios.length; i++) { if(lvlRadios[i].checked) selectedLevel = lvlRadios[i].value; }
-      var userData = { email: email, password: password, name: name, hireDate: document.getElementById('admin-user-hiredate').value, channelCategory: document.getElementById('admin-user-channelcategory').value, channelName: document.getElementById('admin-user-channelname').value, storeName: document.getElementById('admin-user-storename').value, storeRole: document.getElementById('admin-user-storerole').value, level: selectedLevel, factoryRoles: getSelectedFactoryRoles(), certifications: getSelectedCertifications() };
+      var userData = { email: email, password: password, name: name, hireDate: document.getElementById('admin-user-hiredate').value, nickname: document.getElementById('admin-user-nickname').value.trim(), phone: phone, appleId: appleId, channelCategory: document.getElementById('admin-user-channelcategory').value, channelName: document.getElementById('admin-user-channelname').value, storeName: document.getElementById('admin-user-storename').value, storeRole: document.getElementById('admin-user-storerole').value, level: selectedLevel, factoryRoles: getSelectedFactoryRoles(), certifications: getSelectedCertifications() };
       var btn = document.getElementById('admin-user-save-btn'); var spinner = document.getElementById('admin-user-save-spinner');
       btn.disabled = true; spinner.classList.remove('hidden');
       var existingIdx = -1; for(var i=0; i<window.appData.adminUsers.length; i++) { if(window.appData.adminUsers[i].email === email) existingIdx = i; }
