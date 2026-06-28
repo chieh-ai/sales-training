@@ -3433,6 +3433,15 @@
       var hh = String(d.getHours()).padStart(2, '0'); var min = String(d.getMinutes()).padStart(2, '0'); var ss = String(d.getSeconds()).padStart(2, '0');
       return yyyy + '/' + mm + '/' + dd + ' ' + hh + ':' + min + ':' + ss;
     }
+
+    function generateNewId(prefix) {
+      var d = new Date();
+      var yy = String(d.getFullYear()).slice(2);
+      var mm = String(d.getMonth() + 1).padStart(2, '0');
+      var dd = String(d.getDate()).padStart(2, '0');
+      var rand = Math.random().toString(36).substring(2, 5).toUpperCase();
+      return (prefix || '') + yy + mm + dd + rand;
+    }
   </script>
 </body>
 </html>
