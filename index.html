@@ -2465,46 +2465,42 @@
 
       arr.push('<div class="bg-appleBg rounded-2xl border border-appleBorder px-5 py-4 space-y-3">');
 
-      // 第一行：頭像 + 姓名 + Email膠囊 + 等級
-      arr.push('<div class="flex items-center gap-3">');
-      arr.push('<div class="w-12 h-12 rounded-2xl bg-appleBlue/10 flex items-center justify-center shrink-0"><i data-lucide="user" class="w-6 h-6 text-appleBlue"></i></div>');
-      arr.push('<div class="min-w-0 flex-1">');
+      // 第一行：頭像 + 姓名 + Email膠囊 + AppleID + Phone + 等級徽章
+      arr.push('<div class="flex items-start gap-3">');
+      arr.push('<div class="w-12 h-12 rounded-2xl bg-appleBlue/10 flex items-center justify-center shrink-0 mt-0.5"><i data-lucide="user" class="w-6 h-6 text-appleBlue"></i></div>');
+      arr.push('<div class="min-w-0 flex-1 space-y-1.5">');
       arr.push('<div class="flex items-center gap-2 flex-wrap">');
-      arr.push('<span class="text-base font-black text-appleDarkText">' + prEscHtml(user.name||'—') + '</span>');
-      arr.push('<span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-appleCard border border-appleBorder text-appleGrayText"><i data-lucide="mail" class="w-3 h-3"></i>' + prEscHtml(user.email||'—') + '</span>');
-      arr.push('<span class="text-[11px] font-black px-2 py-0.5 rounded-full ' + lvlColor + '">' + prEscHtml(user.level||'L0') + '</span>');
+      arr.push('<span class="text-base font-black text-appleDarkText leading-tight">' + prEscHtml(user.name||'—') + '</span>');
+      arr.push('<span class="text-xs font-black px-2 py-0.5 rounded-full ' + lvlColor + '">' + prEscHtml(user.level||'L0') + '</span>');
+      arr.push('</div>');
+      arr.push('<div class="flex flex-wrap gap-1.5">');
+      arr.push('<span class="inline-flex items-center gap-1 text-[11px] text-appleGrayText bg-appleCard border border-appleBorder rounded-full px-2 py-0.5"><i data-lucide="mail" class="w-3 h-3 shrink-0"></i>' + prEscHtml(user.email||'—') + '</span>');
+      if (user.appleId) arr.push('<span class="inline-flex items-center gap-1 text-[11px] text-appleGrayText bg-appleCard border border-appleBorder rounded-full px-2 py-0.5"><i data-lucide="at-sign" class="w-3 h-3 shrink-0"></i>' + prEscHtml(user.appleId) + '</span>');
+      if (user.phone)   arr.push('<span class="inline-flex items-center gap-1 text-[11px] text-appleGrayText bg-appleCard border border-appleBorder rounded-full px-2 py-0.5"><i data-lucide="phone" class="w-3 h-3 shrink-0"></i>' + prEscHtml(user.phone) + '</span>');
       arr.push('</div>');
       arr.push('</div></div>');
 
-      // 第二行：通路、門市、年資 + 職稱
+      // 第二行：通路、門市、年資標籤 + 職稱
       arr.push('<div class="flex flex-wrap gap-2">');
-      [['building-2', user.channelName||'—'], ['store', user.storeName||'—'], ['calendar', tenureStr]].forEach(function(t){
+      [['building-2', user.channelName||'—'], ['store', user.storeName||'—'], ['calendar', tenureStr], ['badge-check', user.storeRole||'—']].forEach(function(t){
         arr.push('<div class="flex items-center gap-1.5 bg-appleCard border border-appleBorder rounded-xl px-3 py-1.5">');
         arr.push('<i data-lucide="' + t[0] + '" class="w-3.5 h-3.5 text-appleGrayText shrink-0"></i>');
         arr.push('<span class="text-xs font-bold text-appleDarkText">' + prEscHtml(t[1]) + '</span>');
         arr.push('</div>');
       });
-      if (user.storeRole) {
-        arr.push('<div class="flex items-center gap-1.5 bg-appleCard border border-appleBorder rounded-xl px-3 py-1.5">');
-        arr.push('<i data-lucide="badge-check" class="w-3.5 h-3.5 text-appleGrayText shrink-0"></i>');
-        arr.push('<span class="text-xs font-bold text-appleDarkText">' + prEscHtml(user.storeRole) + '</span>');
-        arr.push('</div>');
-      }
       arr.push('</div>');
 
-      // 第三行：原廠角色膠囊 + 原廠檢定膠囊（同一列）
+      // 第三行：原廠角色（藍色膠囊）+ 原廠檢定（有效/失效用圓點，不顯示文字）
       if (roleLabels.length > 0 || certItems.length > 0) {
         arr.push('<div class="flex flex-wrap gap-2">');
         roleLabels.forEach(function(l){
-          arr.push('<span class="inline-flex items-center text-[11px] font-bold px-2.5 py-1.5 rounded-xl bg-appleBlue/10 text-appleBlue border border-appleBlue/20">' + prEscHtml(l) + '</span>');
+          arr.push('<span class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-appleBlue/10 text-appleBlue border border-appleBlue/20"><span class="text-sm">🍎</span>' + prEscHtml(l) + '</span>');
         });
         certItems.forEach(function(c){
           var label = certOptMap[c.code] || c.code;
           var isValid = c.validity !== '失效';
-          var validBadge = isValid
-            ? '<span class="text-[9px] font-black text-appleGreen bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full ml-1">有效</span>'
-            : '<span class="text-[9px] font-black text-appleGrayText bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-full ml-1">失效</span>';
-          arr.push('<span class="inline-flex items-center text-[11px] font-bold px-2.5 py-1.5 rounded-xl bg-appleCard border border-appleBorder text-appleDarkText">' + prEscHtml(label) + validBadge + '</span>');
+          var dot = '<span class="w-2 h-2 rounded-full shrink-0 ' + (isValid ? 'bg-appleGreen' : 'bg-gray-300') + '"></span>';
+          arr.push('<span class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border ' + (isValid ? 'bg-green-50 border-green-200 text-appleDarkText' : 'bg-appleCard border-appleBorder text-appleGrayText') + '">' + dot + prEscHtml(label) + '</span>');
         });
         arr.push('</div>');
       }
