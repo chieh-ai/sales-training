@@ -3130,15 +3130,28 @@
       if (btn && sel) { btn.disabled = (sel.value === ""); }
     }
 
+    // 刷新候選清單：排除已加入 modalTempVideoList 的影片
+    function refreshPlaylistVideoSelect() {
+      var select = document.getElementById('admin-playlist-video-select');
+      if (!select) return;
+      var addedSet = {};
+      for (var i = 0; i < window.modalTempVideoList.length; i++) addedSet[window.modalTempVideoList[i]] = true;
+      var selArr = ['<option value="">選擇要加入的影片...</option>'];
+      for (var j = 0; j < window.appData.videos.length; j++) {
+        var v = window.appData.videos[j];
+        if (!addedSet[v.id]) {
+          selArr.push('<option value="' + v.id + '">' + v.title + ' (' + v.id + ')</option>');
+        }
+      }
+      select.innerHTML = selArr.join(''); select.value = ''; checkPlaylistVideoSelect();
+    }
+
     function openAdminPlaylistModal(playlistId) {
       try {
         var modal = document.getElementById('admin-playlist-modal'); 
         if(!modal) return alert("系統錯誤：找不到播放列表編輯視窗。");
         
-        var select = document.getElementById('admin-playlist-video-select'); 
-        var selArr = ['<option value="">選擇要加入的影片...</option>'];
-        for(var i=0; i<window.appData.videos.length; i++) { selArr.push('<option value="' + window.appData.videos[i].id + '">' + window.appData.videos[i].title + ' (' + window.appData.videos[i].id + ')</option>'); }
-        select.innerHTML = selArr.join(''); select.value = ''; checkPlaylistVideoSelect(); 
+        // 候選清單在 modalTempVideoList 設定後由 refreshPlaylistVideoSelect() 統一刷新
         
         if (playlistId) {
           var p = null; for(var i=0; i<window.appData.playlists.length; i++) { if(window.appData.playlists[i].id === playlistId) p = window.appData.playlists[i]; }
@@ -3154,7 +3167,9 @@
           document.getElementById('admin-playlist-name').value = ''; document.getElementById('admin-playlist-sort').value = 99;
           document.getElementById('admin-playlist-isrequired').checked = false; document.getElementsByName('adminPlaylistLevel')[0].checked = true; window.modalTempVideoList = [];
         }
-        updateAdminStatusText('admin-playlist-isrequired', 'admin-playlist-req-text'); renderModalPlaylistVideos();
+        updateAdminStatusText('admin-playlist-isrequired', 'admin-playlist-req-text');
+        refreshPlaylistVideoSelect(); // 排除已加入影片後建立候選清單
+        renderModalPlaylistVideos();
         modal.classList.remove('hidden'); setTimeout(function() { modal.classList.remove('opacity-0'); }, 10);
       } catch (err) { alert("開啟播放列表設定發生錯誤：" + err.message); console.error(err); }
     }
@@ -3188,14 +3203,22 @@
     function addVideoToPlaylist() {
       var sel = document.getElementById('admin-playlist-video-select'); var vid = sel.value;
       if(!vid || vid === "") return alert("請先從下拉選單選擇一部影片！");
-      if(window.modalTempVideoList.indexOf(vid) === -1) { window.modalTempVideoList.push(vid); renderModalPlaylistVideos(); sel.value = ''; checkPlaylistVideoSelect(); } else { alert("此影片已在列表中！"); }
+      if(window.modalTempVideoList.indexOf(vid) === -1) {
+        window.modalTempVideoList.push(vid);
+        renderModalPlaylistVideos();
+        refreshPlaylistVideoSelect(); // 加入後將此影片從候選清單移除
+      }
     }
     function moveVideoInPlaylist(index, dir) {
       if(index+dir < 0 || index+dir >= window.modalTempVideoList.length) return;
       var temp = window.modalTempVideoList[index]; window.modalTempVideoList[index] = window.modalTempVideoList[index+dir]; window.modalTempVideoList[index+dir] = temp;
       renderModalPlaylistVideos();
     }
-    function removeVideoFromPlaylist(index) { window.modalTempVideoList.splice(index, 1); renderModalPlaylistVideos(); }
+    function removeVideoFromPlaylist(index) {
+      window.modalTempVideoList.splice(index, 1);
+      renderModalPlaylistVideos();
+      refreshPlaylistVideoSelect(); // 移除後將此影片重新加回候選清單
+    }
     
     function saveAdminPlaylist() {
       var id = document.getElementById('admin-playlist-id').value; var name = document.getElementById('admin-playlist-name').value.trim();
