@@ -293,6 +293,18 @@
           <div><label class="block text-sm font-bold text-appleDarkText mb-1.5">子類別 (SubCategory)</label><select id="admin-subcategory" class="w-full bg-appleCard border border-appleBorder rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-appleBlue/30 transition-all shadow-sm appearance-none cursor-pointer"><option value="">(無)</option></select></div>
         </div>
         <div>
+          <label class="block text-sm font-bold text-appleDarkText mb-2">推播對象等級 (TargetLevel)</label>
+          <div class="bg-appleCard border border-appleBorder rounded-xl p-4 flex flex-wrap gap-x-6 gap-y-3 shadow-sm">
+            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="admin-target-level" value="ALL" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-semibold">ALL（全部）</span></label>
+            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="admin-target-level" value="L0" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-semibold">L0</span></label>
+            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="admin-target-level" value="L1" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-semibold">L1</span></label>
+            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="admin-target-level" value="L2" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-semibold">L2</span></label>
+            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="admin-target-level" value="L3" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-semibold">L3</span></label>
+            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="admin-target-level" value="TT" class="w-4 h-4 text-appleBlue focus:ring-appleBlue"><span class="text-sm font-semibold">TT（限 TT）</span></label>
+          </div>
+          <p class="text-[10px] text-appleGrayText mt-1.5 ml-1">設定後，只有該等級（含以上）的使用者才能看到此影片。選 ALL 表示全部開放。</p>
+        </div>
+        <div>
           <div class="flex items-center justify-between mb-2">
             <label class="block text-sm font-bold text-appleDarkText">可瀏覽的角色 (AllowedRoles)</label>
             <label class="flex items-center space-x-1.5 cursor-pointer">
@@ -579,6 +591,7 @@
         var _pwdEl   = document.getElementById('login-password');
         if (_emailEl) _emailEl.value = _se;
         if (_pwdEl)   _pwdEl.value   = _sp;
+        window._isPageRefresh = true; // 標記為頁面重整，initUI 會還原上次頁籤
         setTimeout(function(){ doLogin(); }, 100);
       }
     });
@@ -608,9 +621,15 @@
       var _tabAdminBtn = document.getElementById('tab-admin');
       if (_tabAdminBtn) _tabAdminBtn.style.display = _isAdmin ? '' : 'none';
       try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e){}
-      // 還原上次所在頁籤（重整後保留位置），預設 home
-      var _restoredTab = sessionStorage.getItem('st_tab') || 'home';
-      switchTab(_restoredTab, true);
+      // 重整：還原上次頁籤；新登入：固定回 home（不儲存，讓下次重整也是 home）
+      if (window._isPageRefresh) {
+        var _restoredTab = sessionStorage.getItem('st_tab') || 'home';
+        window._isPageRefresh = false;
+        switchTab(_restoredTab, true);
+      } else {
+        sessionStorage.removeItem('st_tab');
+        switchTab('home', true);
+      }
       window.scrollTo(0, 0);
     }
 
@@ -618,8 +637,9 @@
     //  登出 / 修改密碼
     // ==========================================
     function doLogout() {
-      sessionStorage.removeItem('st_e'); sessionStorage.removeItem('st_p');
+      sessionStorage.clear(); // 清除所有 sessionStorage（st_e/st_p/st_tab/st_ptab 等）
       window.appCredentials = { email: '', password: '' };
+      window._isPageRefresh = false;
       window.appData = { user: null, categories: [], subCategories: [], videos: [], favorites: [], roles: [], channelCategories: [], channelNames: [], storeNames: [], adminUsers: [], playlists: [], watchLogs: [], adminWatchLogs: [], watchEvents: [], adminFavorites: [], factoryOptions: [] };
       if (typeof window.prState !== 'undefined') window.prState = { channel: '', store: '', nameQ: '', selectedEmail: '' };
       document.getElementById('app-header').classList.add('hidden');
@@ -909,13 +929,28 @@
     function renderVideos() {
       var container = document.getElementById('video-grid'); var filtered = [];
       var userRole = (window.appData.user && window.appData.user.storeRole) ? window.appData.user.storeRole : '';
+      var userLevel = (window.appData.user && window.appData.user.level) ? window.appData.user.level : '';
+      var _levelOrder = ['L0', 'L1', 'L2', 'L3', 'TT'];
+      var _userLevelIdx = _levelOrder.indexOf(userLevel);
       for(var f=0; f<window.appData.videos.length; f++){
         var v = window.appData.videos[f];
-        if (!v.allowedRoles || v.allowedRoles.trim() === '') { filtered.push(v); } else {
-          var allowedArray = v.allowedRoles.split(','); var roleMatched = false;
-          for(var r=0; r<allowedArray.length; r++) { if(allowedArray[r].trim() === userRole) roleMatched = true; }
-          if(roleMatched) filtered.push(v);
+        // AllowedRoles 篩選
+        var roleOk = false;
+        if (!v.allowedRoles || v.allowedRoles.trim() === '') { roleOk = true; } else {
+          var allowedArray = v.allowedRoles.split(',');
+          for(var r=0; r<allowedArray.length; r++) { if(allowedArray[r].trim() === userRole) roleOk = true; }
         }
+        if (!roleOk) continue;
+        // TargetLevel 等級篩選（TT 可看全部；其他等級只看 targetLevel <= 自己等級 或 ALL）
+        var tl = v.targetLevel || 'ALL';
+        if (tl !== 'ALL') {
+          if (userLevel === 'TT') { /* TT 全看 */ }
+          else {
+            var tlIdx = _levelOrder.indexOf(tl);
+            if (_userLevelIdx < tlIdx) continue; // 等級不足，跳過
+          }
+        }
+        filtered.push(v);
       }
       
       var finalFiltered = [];
@@ -1861,6 +1896,9 @@
 
     // 🚀 [更新] 渲染後台 Dashboard (新增精準 Leaderboard 與 4 大進階統計圖表)
     function renderAdminDashboard() {
+      // 嚴格驗證：只有 ADMIN + TT 才能渲染後台
+      var _adminU = window.appData && window.appData.user;
+      if (!_adminU || _adminU.storeRole !== 'ADMIN' || _adminU.level !== 'TT') return;
       var container = document.getElementById('admin-dashboard-content');
       if(!container) return;
 
@@ -2959,22 +2997,27 @@
             document.getElementById('admin-url').value = video.url; document.getElementById('admin-category').value = video.category;
             onAdminModalCategoryChange(); document.getElementById('admin-subcategory').value = video.subCategory || '';
             document.getElementById('admin-status').checked = (video.status === '上架');
-            document.getElementById('admin-created-at').value = video.createdAt || getCurrentTimestamp(); 
+            document.getElementById('admin-created-at').value = video.createdAt || getCurrentTimestamp();
             var allowed = video.allowedRoles ? video.allowedRoles.split(',') : [];
             for(var a=0; a<allowed.length; a++) allowed[a] = allowed[a].trim();
             var roleCbs = document.querySelectorAll('.admin-role-checkbox');
             for(var n=0; n<roleCbs.length; n++) { roleCbs[n].checked = (allowed.indexOf(roleCbs[n].value) !== -1); }
-            
-            updateSelectAllState(); 
+            // TargetLevel
+            var tlVal = video.targetLevel || 'ALL';
+            var tlRadios = document.querySelectorAll('input[name="admin-target-level"]');
+            for(var t=0; t<tlRadios.length; t++) tlRadios[t].checked = (tlRadios[t].value === tlVal);
+            updateSelectAllState();
           }
         } else {
           document.getElementById('admin-modal-title').innerText = "新增影片"; document.getElementById('admin-id').value = generateNewId('V'); document.getElementById('admin-title').value = '';
           document.getElementById('admin-url').value = ''; document.getElementById('admin-category').value = '';
-          onAdminModalCategoryChange(); document.getElementById('admin-status').checked = true; 
+          onAdminModalCategoryChange(); document.getElementById('admin-status').checked = true;
           document.getElementById('admin-created-at').value = '';
           var roleCbs = document.querySelectorAll('.admin-role-checkbox'); for(var m=0; m<roleCbs.length; m++) roleCbs[m].checked = false;
-          
-          updateSelectAllState(); 
+          // TargetLevel 預設 ALL
+          var tlRadios = document.querySelectorAll('input[name="admin-target-level"]');
+          for(var t=0; t<tlRadios.length; t++) tlRadios[t].checked = (tlRadios[t].value === 'ALL');
+          updateSelectAllState();
         }
         updateAdminStatusText('admin-status', 'admin-status-text');
         modal.classList.remove('hidden'); setTimeout(function() { modal.classList.remove('opacity-0'); }, 10);
@@ -3006,7 +3049,9 @@
       var existingCreatedAt = document.getElementById('admin-created-at').value;
       var finalCreatedAt = existingCreatedAt !== '' ? existingCreatedAt : getCurrentTimestamp();
 
-      var videoData = { id: id, title: title, url: url, category: category, subCategory: document.getElementById('admin-subcategory').value, status: document.getElementById('admin-status').checked ? "上架" : "下架", allowedRoles: rolesArr.join(', '), isRequired: isReq, createdAt: finalCreatedAt };
+      var _tlRadios = document.querySelectorAll('input[name="admin-target-level"]'); var _tlVal = 'ALL';
+      for(var _t=0; _t<_tlRadios.length; _t++) { if(_tlRadios[_t].checked) { _tlVal = _tlRadios[_t].value; break; } }
+      var videoData = { id: id, title: title, url: url, category: category, subCategory: document.getElementById('admin-subcategory').value, status: document.getElementById('admin-status').checked ? "上架" : "下架", allowedRoles: rolesArr.join(', '), isRequired: isReq, createdAt: finalCreatedAt, targetLevel: _tlVal };
       
       var btn = document.getElementById('admin-save-btn'); var spinner = document.getElementById('admin-save-spinner');
       btn.disabled = true; spinner.classList.remove('hidden');
