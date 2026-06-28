@@ -692,38 +692,38 @@
         '  <button type="button" onclick="document.getElementById(\'profile-overlay\').remove()" class="w-7 h-7 rounded-full flex items-center justify-center text-appleGrayText hover:bg-appleBorder/60 transition-all"><i data-lucide="x" class="w-4 h-4"></i></button>',
         '</div>',
 
-        // 第一行：頭像 + 姓名 + Email膠囊 + AppleID + Phone + 等級徽章
+        // 第一行：頭像左側固定，右側姓名 + 等級徽章，下方 Email
         '<div class="flex items-start gap-3">',
         '  <div class="w-12 h-12 rounded-2xl bg-appleBlue/10 flex items-center justify-center shrink-0 mt-0.5"><i data-lucide="user" class="w-6 h-6 text-appleBlue"></i></div>',
-        '  <div class="min-w-0 flex-1 space-y-1.5">',
+        '  <div class="min-w-0 flex-1 space-y-1">',
         '    <div class="flex items-center gap-2 flex-wrap">',
         '      <span class="text-base font-black text-appleDarkText leading-tight">' + esc(u.name||'—') + '</span>',
         '      <span class="text-xs font-black px-2 py-0.5 rounded-full ' + lvlColor + '">' + esc(u.level||'L0') + '</span>',
         '    </div>',
-        '    <div class="flex flex-wrap gap-1.5">',
-        '      <span class="inline-flex items-center gap-1 text-[11px] text-appleGrayText bg-appleCard border border-appleBorder rounded-full px-2 py-0.5 break-all"><i data-lucide="mail" class="w-3 h-3 shrink-0"></i>' + esc(u.email||'—') + '</span>',
+        '    <p class="text-[11px] text-appleGrayText break-all">' + esc(u.email||'—') + '</p>',
+        '  </div>',
+        '</div>',
       ];
 
-      if (u.appleId) html.push('      <span class="inline-flex items-center gap-1 text-[11px] text-appleGrayText bg-appleCard border border-appleBorder rounded-full px-2 py-0.5"><i data-lucide="at-sign" class="w-3 h-3 shrink-0"></i>' + esc(u.appleId) + '</span>');
-      if (u.phone)   html.push('      <span class="inline-flex items-center gap-1 text-[11px] text-appleGrayText bg-appleCard border border-appleBorder rounded-full px-2 py-0.5"><i data-lucide="phone" class="w-3 h-3 shrink-0"></i>' + esc(u.phone) + '</span>');
-
-      html.push('    </div>');
-      html.push('  </div>');
-      html.push('</div>');
-
-      // 第二行：通路、門市、年資標籤 + 職稱
+      // 第二行：通路、門市、職稱
       html.push('<div class="flex flex-wrap gap-2">');
-      [['building-2', u.channelName||'—'], ['store', u.storeName||'—'], ['calendar', tenureStr], ['badge-check', u.storeRole||'—']].forEach(function(t){
+      [['building-2', u.channelName||'—'], ['store', u.storeName||'—'], ['badge-check', u.storeRole||'—']].forEach(function(t){
         html.push('<div class="flex items-center gap-1.5 bg-appleCard border border-appleBorder rounded-xl px-3 py-1.5"><i data-lucide="'+t[0]+'" class="w-3.5 h-3.5 text-appleGrayText shrink-0"></i><span class="text-xs font-bold text-appleDarkText">'+esc(t[1])+'</span></div>');
       });
       html.push('</div>');
 
-      // 第三行：原廠角色（藍色膠囊）+ 原廠檢定膠囊（有效/失效用圓點表示，不顯示文字）
-      if (roleLabels.length > 0 || certItems.length > 0) {
+      // 第三行：原廠角色（藍色膠囊）
+      if (roleLabels.length > 0) {
         html.push('<div class="flex flex-wrap gap-2">');
         roleLabels.forEach(function(l){
-          html.push('<span class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-appleBlue/10 text-appleBlue border border-appleBlue/20">' +esc(l) + '</span>');
+          html.push('<span class="inline-flex items-center text-xs font-bold px-3 py-1.5 rounded-xl bg-appleBlue/10 text-appleBlue border border-appleBlue/20">' + esc(l) + '</span>');
         });
+        html.push('</div>');
+      }
+
+      // 第四行：原廠檢定（有效 = 綠底綠點、失效 = 灰底灰點，不顯示文字）
+      if (certItems.length > 0) {
+        html.push('<div class="flex flex-wrap gap-2">');
         certItems.forEach(function(c){
           var label = certOptMap[c.code] || c.code;
           var isValid = c.validity !== '失效';
