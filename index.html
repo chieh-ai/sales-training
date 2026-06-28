@@ -722,7 +722,7 @@
       if (roleLabels.length > 0 || certItems.length > 0) {
         html.push('<div class="flex flex-wrap gap-2">');
         roleLabels.forEach(function(l){
-          html.push('<span class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-appleBlue/10 text-appleBlue border border-appleBlue/20"><span class="text-sm">🍎</span>' + esc(l) + '</span>');
+          html.push('<span class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-appleBlue/10 text-appleBlue border border-appleBlue/20">' +esc(l) + '</span>');
         });
         certItems.forEach(function(c){
           var label = certOptMap[c.code] || c.code;
@@ -2494,7 +2494,7 @@
       if (roleLabels.length > 0 || certItems.length > 0) {
         arr.push('<div class="flex flex-wrap gap-2">');
         roleLabels.forEach(function(l){
-          arr.push('<span class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-appleBlue/10 text-appleBlue border border-appleBlue/20"><span class="text-sm">🍎</span>' + prEscHtml(l) + '</span>');
+          arr.push('<span class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-appleBlue/10 text-appleBlue border border-appleBlue/20">' +prEscHtml(l) + '</span>');
         });
         certItems.forEach(function(c){
           var label = certOptMap[c.code] || c.code;
